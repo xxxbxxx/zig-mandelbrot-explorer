@@ -5,22 +5,20 @@ const assert = std.debug.assert;
 
 const Viewport = @import("viewport.zig");
 const Mandelbrot = @import("mandelbrot.zig");
+const Imgui = @import("imgui.zig");
 const Complex = Mandelbrot.Complex;
 const Vector = std.meta.Vector;
 
 usingnamespace @cImport({
-    @cDefine("CIMGUI_DEFINE_ENUMS_AND_STRUCTS", "1");
-    @cInclude("cimgui.h");
-
     @cDefine("SDL_MAIN_HANDLED", "1");
     @cInclude("SDL2/SDL.h");
+
     @cInclude("imgui_impl_sdl.h");
 });
 
 // work-arounds:
 //pub const SDL_TOUCH_MOUSEID = Uint32 - 1;  -> "error: integer value 1 cannot be coerced to type 'type'""
 const zig_SDL_TOUCH_MOUSEID: u32 = 0xFFFFFFFF;
-const ImVec2_zero = ImVec2{ .x = 0, .y = 0, .dummy = undefined };
 
 // enable thread pool:
 pub const io_mode = .evented;
@@ -175,7 +173,7 @@ pub fn main() !void {
 
         // inputs
         {
-            var imgui_io: *ImGuiIO = igGetIO();
+            const imgui_io = Imgui.GetIO();
 
             const AffineTransfo = struct { // y = a0 + a1*x
                 a0: Complex,
@@ -291,20 +289,19 @@ pub fn main() !void {
         Viewport.beginFrame(viewport);
 
         if (show_dev_ui) {
-            const FlagsNone: c_int = 0;
-            _ = igBegin("Parameters", null, FlagsNone);
-            defer igEnd();
+            _ = Imgui.Begin("Parameters");
+            defer Imgui.End();
 
-            _ = igCheckbox("continuous refresh", &continuous_refresh);
+            _ = Imgui.Checkbox("continuous refresh", &continuous_refresh);
 
             for ([_]*QualityParams{ &quality_preview, &quality_normal }) |it| {
-                if (igCollapsingHeader(it.label, ImGuiTreeNodeFlags_DefaultOpen)) {
-                    igPushIDStr(it.label);
-                    defer igPopID();
-                    const value_changed1 = igSliderInt("max iterations", &it.max_iter, 1, 50000, "%d");
-                    const value_changed2 = igSliderInt("antialias", &it.supersamples, 1, 5, "%d");
-                    const value_changed3 = igSliderInt("coarseness", &it.resolution_divider, 1, 8, "%d");
-                    const value_changed4 = igInputInt("precison bits (32,64,128)", &it.precision_bits, 32, 1, FlagsNone);
+                if (Imgui.CollapsingHeaderExt(it.label, .{ .DefaultOpen = true })) {
+                    Imgui.PushIDStr(it.label);
+                    defer Imgui.PopID();
+                    const value_changed1 = Imgui.SliderInt("max iterations", &it.max_iter, 1, 50000);
+                    const value_changed2 = Imgui.SliderInt("antialias", &it.supersamples, 1, 5);
+                    const value_changed3 = Imgui.SliderInt("coarseness", &it.resolution_divider, 1, 8);
+                    const value_changed4 = Imgui.InputIntExt("precison bits (32,64,128)", &it.precision_bits, 32, 1, .{});
 
                     if ((value_changed1 or value_changed2 or value_changed3 or value_changed4) and mandel_compute_state.dirty == .done) {
                         mandel_compute_state.dirty = .previewed;
@@ -318,19 +315,19 @@ pub fn main() !void {
                 assert(txt.ptr == &storage);
                 storage[txt.len] = 0;
                 const txtZ = storage[0..txt.len :0];
-                igText(txtZ);
+                Imgui.Text(txtZ);
             }
 
             if (mandel_compute_state.status == .idle and (mandel_compute_state.done_timestamp_ms > mandel_compute_state.previewed_timestamp_ms) and (mandel_compute_state.previewed_timestamp_ms > mandel_compute_state.changed_timestamp_ms)) {
                 const preview_dur: f64 = @intToFloat(f64, mandel_compute_state.previewed_timestamp_ms - mandel_compute_state.changed_timestamp_ms) / 1000;
                 const final_dur: f64 = @intToFloat(f64, mandel_compute_state.done_timestamp_ms - mandel_compute_state.previewed_timestamp_ms) / 1000;
-                igText("Latest computation: %.3fs (preview: %.3fs)", final_dur, preview_dur);
+                Imgui.Text("Latest computation: %.3fs (preview: %.3fs)", final_dur, preview_dur);
             } else {
-                igText("Latest computation: ...");
+                Imgui.Text("Latest computation: ...");
             }
 
-            var imgui_io: *ImGuiIO = igGetIO();
-            igText("Application average %.3f ms/frame (%.1f FPS)", @floatCast(f64, 1000.0 / imgui_io.Framerate), @floatCast(f64, imgui_io.Framerate));
+            const imgui_io = Imgui.GetIO();
+            Imgui.Text("Application average %.3f ms/frame (%.1f FPS)", @floatCast(f64, 1000.0 / imgui_io.Framerate), @floatCast(f64, imgui_io.Framerate));
         }
 
         // mandelbrot computer state
@@ -404,15 +401,15 @@ pub fn main() !void {
             }
 
             if (show_dev_ui) {
-                var drawList = igGetForegroundDrawList();
+                var drawList = Imgui.GetForegroundDrawList().?;
                 for (touch_state.current[0..touch_state.fingers]) |s| {
-                    ImDrawList_AddCircle(drawList, ImVec2{ .x = s.pos.x * w, .y = s.pos.y * h, .dummy = undefined }, 40, 0xFFFF0000, 8, 3);
+                    Imgui.DrawList.AddCircleExt(drawList, Imgui.Vec2{ .x = s.pos.x * w, .y = s.pos.y * h }, 40, 0xFFFF0000, 8, 3);
                 }
                 for (touch_state.initial[0..touch_state.fingers]) |s| {
-                    ImDrawList_AddCircle(drawList, ImVec2{ .x = s.pos.x * w, .y = s.pos.y * h, .dummy = undefined }, 30, 0xFFAA8833, 8, 3);
+                    Imgui.DrawList.AddCircleExt(drawList, Imgui.Vec2{ .x = s.pos.x * w, .y = s.pos.y * h }, 30, 0xFFAA8833, 8, 3);
                 }
                 if (mouse_state.current) |s| {
-                    ImDrawList_AddRect(drawList, ImVec2{ .x = mouse_state.initial.pos.x * w, .y = mouse_state.initial.pos.y * h, .dummy = undefined }, ImVec2{ .x = s.pos.x * w, .y = s.pos.y * h, .dummy = undefined }, 0xFFAA8833, 0, 0, 3);
+                    Imgui.DrawList.AddRectExt(drawList, Imgui.Vec2{ .x = mouse_state.initial.pos.x * w, .y = mouse_state.initial.pos.y * h }, Imgui.Vec2{ .x = s.pos.x * w, .y = s.pos.y * h }, 0xFFAA8833, 0, .{}, 3);
                 }
             }
         }

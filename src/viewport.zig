@@ -1,6 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+const Imgui = @import("imgui.zig");
 
 const warn = std.debug.warn;
 const fmt = std.fmt;
@@ -8,11 +9,6 @@ const assert = std.debug.assert;
 
 usingnamespace @cImport({
     @cInclude("vulkan/vulkan.h");
-});
-
-const c = @cImport({
-    @cDefine("CIMGUI_DEFINE_ENUMS_AND_STRUCTS", "1");
-    @cInclude("cimgui.h");
 });
 
 const DVULKAN_DEBUG_REPORT = (std.builtin.mode == .Debug);
@@ -99,10 +95,7 @@ const Context = struct {
     frame_draw_quads: ArrayList(Quad),
 };
 
-pub const Vec2 = struct {
-    x: f32,
-    y: f32,
-};
+pub const Vec2 = Imgui.Vec2;
 const Quad = struct {
     corners: [4]Vec2,
     texture: *Texture,
@@ -298,8 +291,8 @@ const DisplayTransfo = struct {
     fb_height: u32,
 };
 const PrimitiveDrawData = struct {
-    vertices: []const c.ImDrawVert,
-    indices: []const c.ImDrawIdx,
+    vertices: []const Imgui.DrawVert,
+    indices: []const Imgui.DrawIdx,
 };
 
 fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameRenderData.RenderData, primitives_data: []const PrimitiveDrawData, imageView: VkImageView, displayTransfo: DisplayTransfo) !void {
@@ -317,8 +310,8 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
                 total_index_count += prim.indices.len;
             }
 
-            vertex_size = total_vertex_count * @sizeOf(c.ImDrawVert);
-            index_size = total_index_count * @sizeOf(c.ImDrawIdx);
+            vertex_size = total_vertex_count * @sizeOf(Imgui.DrawVert);
+            index_size = total_index_count * @sizeOf(Imgui.DrawIdx);
         }
 
         if (frd.vertex == null or frd.vertex_size < vertex_size)
@@ -327,8 +320,8 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
             try createOrResizeBuffer(ctx, &frd.index, &frd.index_memory, &frd.index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
         {
-            var vtx_dst: [*]c.ImDrawVert = undefined;
-            var idx_dst: [*]c.ImDrawIdx = undefined;
+            var vtx_dst: [*]Imgui.DrawVert = undefined;
+            var idx_dst: [*]Imgui.DrawIdx = undefined;
 
             err = vkMapMemory(ctx.device, frd.vertex_memory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
             try checkVkResult(err);
@@ -336,8 +329,8 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
             try checkVkResult(err);
 
             for (primitives_data) |prim| {
-                std.mem.copy(c.ImDrawVert, vtx_dst[0..prim.vertices.len], prim.vertices);
-                std.mem.copy(c.ImDrawIdx, idx_dst[0..prim.indices.len], prim.indices);
+                std.mem.copy(Imgui.DrawVert, vtx_dst[0..prim.vertices.len], prim.vertices);
+                std.mem.copy(Imgui.DrawIdx, idx_dst[0..prim.indices.len], prim.indices);
                 vtx_dst += prim.vertices.len;
                 idx_dst += prim.indices.len;
             }
@@ -417,7 +410,7 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
         const vertex_offset = [_]VkDeviceSize{0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffers, &vertex_offset);
 
-        assert(@sizeOf(c.ImDrawIdx) == 2);
+        assert(@sizeOf(Imgui.DrawIdx) == 2);
         vkCmdBindIndexBuffer(command_buffer, frd.index, 0, .VK_INDEX_TYPE_UINT16);
     }
 
@@ -441,15 +434,14 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
     }
 }
 
-fn renderDrawData(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, draw_data: *const c.ImDrawData, command_buffer: VkCommandBuffer) !void {
-    const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
+fn renderDrawData(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, draw_data: *const Imgui.DrawData, command_buffer: VkCommandBuffer) !void {
+    const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0]*Imgui.DrawList{};
 
     var primitive_storage: [1000]PrimitiveDrawData = undefined;
     const primitives = primitive_storage[0..@intCast(usize, draw_data.CmdListsCount)];
-    for (lists) |cmd_list_ptr, i| {
-        const cmd_list = cmd_list_ptr.*;
-        primitives[i].vertices = cmd_list.VtxBuffer.Data[0..@intCast(usize, cmd_list.VtxBuffer.Size)];
-        primitives[i].indices = cmd_list.IdxBuffer.Data[0..@intCast(usize, cmd_list.IdxBuffer.Size)];
+    for (lists) |cmd_list, i| {
+        primitives[i].vertices = cmd_list.VtxBuffer.items[0..@intCast(usize, cmd_list.VtxBuffer.len)];
+        primitives[i].indices = cmd_list.IdxBuffer.items[0..@intCast(usize, cmd_list.IdxBuffer.len)];
     }
 
     // Setup desired Vulkan state
@@ -463,18 +455,16 @@ fn renderDrawData(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransf
     // (Because we merged all buffers into a single one, we maintain our own offset into them)
     var global_vtx_offset: u32 = 0;
     var global_idx_offset: u32 = 0;
-    for (lists) |cmd_list_ptr| {
-        const cmd_list = cmd_list_ptr.*;
-        for (cmd_list.CmdBuffer.Data[0..@intCast(usize, cmd_list.CmdBuffer.Size)]) |*pcmd| {
+    for (lists) |cmd_list| {
+        for (cmd_list.CmdBuffer.items[0..@intCast(usize, cmd_list.CmdBuffer.len)]) |*pcmd| {
             assert(pcmd.UserCallback == null);
 
             // Project scissor/clipping rectangles into framebuffer space
-            var clip_rect = c.ImVec4{
+            var clip_rect = Imgui.Vec4{
                 .x = (pcmd.ClipRect.x - clip_off.x) * clip_scale.x,
                 .y = (pcmd.ClipRect.y - clip_off.y) * clip_scale.y,
                 .z = (pcmd.ClipRect.z - clip_off.x) * clip_scale.x,
                 .w = (pcmd.ClipRect.w - clip_off.y) * clip_scale.y,
-                .dummy = undefined,
             };
 
             if (clip_rect.x < @intToFloat(f32, displayTransfo.fb_width) and clip_rect.y < @intToFloat(f32, displayTransfo.fb_height) and clip_rect.z >= 0.0 and clip_rect.w >= 0.0) {
@@ -501,28 +491,21 @@ fn renderDrawData(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransf
                 vkCmdDrawIndexed(command_buffer, pcmd.ElemCount, 1, pcmd.IdxOffset + global_idx_offset, @intCast(i32, pcmd.VtxOffset + global_vtx_offset), 0);
             }
         }
-        global_idx_offset += @intCast(u32, cmd_list.IdxBuffer.Size);
-        global_vtx_offset += @intCast(u32, cmd_list.VtxBuffer.Size);
+        global_idx_offset += @intCast(u32, cmd_list.IdxBuffer.len);
+        global_vtx_offset += @intCast(u32, cmd_list.VtxBuffer.len);
     }
 }
 
-fn vec2vec(v: Vec2) c.ImVec2 {
-    return c.ImVec2{
-        .x = v.x,
-        .y = v.y,
-        .dummy = undefined,
-    };
-}
 fn renderQuad(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, quad: Quad, command_buffer: VkCommandBuffer) !void {
     const primitives = [_]PrimitiveDrawData{
         .{
-            .vertices = &[_]c.ImDrawVert{
-                c.ImDrawVert{ .pos = vec2vec(quad.corners[0]), .uv = c.ImVec2{ .x = 0, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
-                c.ImDrawVert{ .pos = vec2vec(quad.corners[1]), .uv = c.ImVec2{ .x = 1, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
-                c.ImDrawVert{ .pos = vec2vec(quad.corners[2]), .uv = c.ImVec2{ .x = 1, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
-                c.ImDrawVert{ .pos = vec2vec(quad.corners[3]), .uv = c.ImVec2{ .x = 0, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
+            .vertices = &[_]Imgui.DrawVert{
+                .{ .pos = quad.corners[0], .uv = Imgui.Vec2{ .x = 0, .y = 0 }, .col = 0xFFFFFFFF },
+                .{ .pos = quad.corners[1], .uv = Imgui.Vec2{ .x = 1, .y = 0 }, .col = 0xFFFFFFFF },
+                .{ .pos = quad.corners[2], .uv = Imgui.Vec2{ .x = 1, .y = 1 }, .col = 0xFFFFFFFF },
+                .{ .pos = quad.corners[3], .uv = Imgui.Vec2{ .x = 0, .y = 1 }, .col = 0xFFFFFFFF },
             },
-            .indices = &[_]c.ImDrawIdx{ 0, 1, 3, 1, 2, 3 },
+            .indices = &[_]Imgui.DrawIdx{ 0, 1, 3, 1, 2, 3 },
         },
     };
 
@@ -876,13 +859,13 @@ fn createDeviceObjects(ctx: *Context) !void {
     };
 
     const binding_desc = [_]VkVertexInputBindingDescription{
-        VkVertexInputBindingDescription{ .binding = 0, .stride = @sizeOf(c.ImDrawVert), .inputRate = .VK_VERTEX_INPUT_RATE_VERTEX },
+        VkVertexInputBindingDescription{ .binding = 0, .stride = @sizeOf(Imgui.DrawVert), .inputRate = .VK_VERTEX_INPUT_RATE_VERTEX },
     };
 
     const attribute_desc = [_]VkVertexInputAttributeDescription{
-        VkVertexInputAttributeDescription{ .location = 0, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R32G32_SFLOAT, .offset = @byteOffsetOf(c.ImDrawVert, "pos") },
-        VkVertexInputAttributeDescription{ .location = 1, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R32G32_SFLOAT, .offset = @byteOffsetOf(c.ImDrawVert, "uv") },
-        VkVertexInputAttributeDescription{ .location = 2, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R8G8B8A8_UNORM, .offset = @byteOffsetOf(c.ImDrawVert, "col") },
+        VkVertexInputAttributeDescription{ .location = 0, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R32G32_SFLOAT, .offset = @byteOffsetOf(Imgui.DrawVert, "pos") },
+        VkVertexInputAttributeDescription{ .location = 1, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R32G32_SFLOAT, .offset = @byteOffsetOf(Imgui.DrawVert, "uv") },
+        VkVertexInputAttributeDescription{ .location = 2, .binding = binding_desc[0].binding, .format = .VK_FORMAT_R8G8B8A8_UNORM, .offset = @byteOffsetOf(Imgui.DrawVert, "col") },
     };
 
     const vertex_info = VkPipelineVertexInputStateCreateInfo{
@@ -1069,9 +1052,9 @@ export fn ImGui_ImplVulkan_Init(ctx: *Context) bool {
 }
 fn imguiImplVulkanInit(ctx: *Context) !bool {
     // Setup back-end capabilities flags
-    const io: *c.ImGuiIO = c.igGetIO();
+    const io = Imgui.GetIO();
     io.BackendRendererName = "imgui_impl_vulkan";
-    io.BackendFlags |= c.ImGuiBackendFlags_RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+    io.BackendFlags.RendererHasVtxOffset = true; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
     assert(ctx.instance != null);
     assert(ctx.physical_device != null);
@@ -1090,12 +1073,12 @@ fn imguiImplVulkanInit(ctx: *Context) !bool {
         var width: c_int = undefined;
         var height: c_int = undefined;
         var bpp: c_int = undefined;
-        c.ImFontAtlas_GetTexDataAsRGBA32(io.Fonts, &pixels, &width, &height, &bpp);
+        Imgui.FontAtlas.GetTexDataAsRGBA32Ext(io.Fonts.?, &pixels, &width, &height, &bpp);
         assert(bpp == 4);
         const upload_size: usize = @intCast(usize, width * height * bpp) * @sizeOf(u8);
 
         try initTexture(ctx, &ctx.font_texture, @intCast(u32, width), @intCast(u32, height));
-        c.ImFontAtlas_SetTexID(io.Fonts, @ptrCast(c.ImTextureID, ctx.font_texture.image));
+        Imgui.FontAtlas.SetTexID(io.Fonts.?, @ptrCast(Imgui.TextureID, ctx.font_texture.image));
 
         const texupload = try ctx.frame_texture_uploads.addOne();
         try initTextureUpload(ctx, texupload, pixels[0..upload_size], &ctx.font_texture);
@@ -1568,10 +1551,10 @@ pub const getWindowSize = imguiImpl_GetWindowSize;
 
 pub fn beginFrame(ctx: *Context) void {
     imguiImpl_NewFrameSDL(ctx);
-    c.igNewFrame();
+    Imgui.NewFrame();
 }
 
-fn frameRender(ctx: *Context, wd: *VulkanWindow, draw_data: *const c.ImDrawData) !void {
+fn frameRender(ctx: *Context, wd: *VulkanWindow, draw_data: *const Imgui.DrawData) !void {
     const u64max = std.math.maxInt(u64);
 
     const image_acquired_semaphore = wd.frame_semaphores[wd.semaphore_index].image_acquired_semaphore;
@@ -1732,8 +1715,8 @@ fn frameRebuildSwapchain(ctx: *Context) !void {
 }
 
 pub fn endFrame(ctx: *Context) !void {
-    c.igRender();
-    const draw_data: *c.ImDrawData = c.igGetDrawData();
+    Imgui.Render();
+    const draw_data = Imgui.GetDrawData();
 
     const is_minimized = (draw_data.DisplaySize.x <= 0 or draw_data.DisplaySize.y <= 0);
     const force_render = true; // TODO BUG: still need to flush the textureuploads even if no present

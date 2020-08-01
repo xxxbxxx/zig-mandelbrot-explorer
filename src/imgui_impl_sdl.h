@@ -23,6 +23,7 @@ typedef union SDL_Event SDL_Event;
     #define EXTERN_CAPI extern "C"
 #else 
     #define EXTERN_CAPI
+    #include <stdbool.h>
 #endif
 
 EXTERN_CAPI bool     ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context);
