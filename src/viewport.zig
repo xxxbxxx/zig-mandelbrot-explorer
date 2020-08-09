@@ -40,7 +40,7 @@ const FrameRenderData = struct {
         descriptor_set: VkDescriptorSet = null,
     };
 
-    data: [2]RenderData = [_]RenderData{ .{}, .{} },
+    data: ArrayList(RenderData), // 0 = imgui data
 
     // mm devrait pas être là pour le multiwindow?
     active_texture_uploads: ArrayList(TextureUpload),
@@ -94,8 +94,9 @@ const Context = struct {
     tiling_sampler: VkSampler = null,
     font_texture: Texture = Texture{},
 
-    draw_texture_uploads: ArrayList(TextureUpload),
-    draw_quads: ArrayList(Quad),
+    // things queued to render, in addition to imgui
+    frame_texture_uploads: ArrayList(TextureUpload),
+    frame_draw_quads: ArrayList(Quad),
 };
 
 pub const Vec2 = struct {
@@ -296,10 +297,89 @@ const DisplayTransfo = struct {
     fb_width: u32,
     fb_height: u32,
 };
-fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *const FrameRenderData.RenderData, imageView: VkImageView, displayTransfo: DisplayTransfo) void {
+const PrimitiveDrawData = struct {
+    vertices: []const c.ImDrawVert,
+    indices: []const c.ImDrawIdx,
+};
 
-    // Update the Descriptor Set:
+fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameRenderData.RenderData, primitives_data: []const PrimitiveDrawData, imageView: VkImageView, displayTransfo: DisplayTransfo) !void {
+    var err: VkResult = undefined;
+
+    // Upload vertex/index data into a single contiguous GPU buffer
     {
+        var vertex_size: usize = undefined;
+        var index_size: usize = undefined;
+        {
+            var total_vertex_count: usize = 0;
+            var total_index_count: usize = 0;
+            for (primitives_data) |prim| {
+                total_vertex_count += prim.vertices.len;
+                total_index_count += prim.indices.len;
+            }
+
+            vertex_size = total_vertex_count * @sizeOf(c.ImDrawVert);
+            index_size = total_index_count * @sizeOf(c.ImDrawIdx);
+        }
+
+        if (frd.vertex == null or frd.vertex_size < vertex_size)
+            try createOrResizeBuffer(ctx, &frd.vertex, &frd.vertex_memory, &frd.vertex_size, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        if (frd.index == null or frd.index_size < index_size)
+            try createOrResizeBuffer(ctx, &frd.index, &frd.index_memory, &frd.index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+        {
+            var vtx_dst: [*]c.ImDrawVert = undefined;
+            var idx_dst: [*]c.ImDrawIdx = undefined;
+
+            err = vkMapMemory(ctx.device, frd.vertex_memory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
+            try checkVkResult(err);
+            err = vkMapMemory(ctx.device, frd.index_memory, 0, index_size, 0, @ptrCast([*c]?*c_void, &idx_dst));
+            try checkVkResult(err);
+
+            for (primitives_data) |prim| {
+                std.mem.copy(c.ImDrawVert, vtx_dst[0..prim.vertices.len], prim.vertices);
+                std.mem.copy(c.ImDrawIdx, idx_dst[0..prim.indices.len], prim.indices);
+                vtx_dst += prim.vertices.len;
+                idx_dst += prim.indices.len;
+            }
+
+            const ranges = [_]VkMappedMemoryRange{
+                VkMappedMemoryRange{
+                    .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+                    .pNext = null,
+                    .memory = frd.vertex_memory,
+                    .size = VK_WHOLE_SIZE,
+                    .offset = 0,
+                },
+                VkMappedMemoryRange{
+                    .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
+                    .pNext = null,
+                    .memory = frd.index_memory,
+                    .size = VK_WHOLE_SIZE,
+                    .offset = 0,
+                },
+            };
+            err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
+            try checkVkResult(err);
+
+            vkUnmapMemory(ctx.device, frd.vertex_memory);
+            vkUnmapMemory(ctx.device, frd.index_memory);
+        }
+    }
+
+    // Create and Update the Descriptor Set:
+    {
+        if (frd.descriptor_set == null) {
+            const alloc_info = VkDescriptorSetAllocateInfo{
+                .sType = .VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = null,
+                .descriptorPool = ctx.descriptor_pool,
+                .descriptorSetCount = 1,
+                .pSetLayouts = &ctx.descriptor_set_layout,
+            };
+            err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.descriptor_set);
+            try checkVkResult(err);
+        }
+
         const desc_image = [_]VkDescriptorImageInfo{
             .{
                 .sampler = ctx.tiling_sampler,
@@ -331,19 +411,6 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *const 
         vkCmdBindDescriptorSets(command_buffer, .VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipeline_layout, 0, desc_set.len, &desc_set, 0, null);
     }
 
-    // Setup viewport:
-    {
-        const viewport = VkViewport{
-            .x = 0,
-            .y = 0,
-            .width = @intToFloat(f32, displayTransfo.fb_width),
-            .height = @intToFloat(f32, displayTransfo.fb_height),
-            .minDepth = 0.0,
-            .maxDepth = 1.0,
-        };
-        vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-    }
-
     // Bind Vertex And index Buffer:
     {
         const vertex_buffers = [_]VkBuffer{frd.vertex};
@@ -359,77 +426,34 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *const 
         vkCmdPushConstants(command_buffer, ctx.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 0, @sizeOf(f32) * 2, &displayTransfo.scale);
         vkCmdPushConstants(command_buffer, ctx.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 2, @sizeOf(f32) * 2, &displayTransfo.translate);
     }
+
+    // Setup viewport:
+    {
+        const viewport = VkViewport{
+            .x = 0,
+            .y = 0,
+            .width = @intToFloat(f32, displayTransfo.fb_width),
+            .height = @intToFloat(f32, displayTransfo.fb_height),
+            .minDepth = 0.0,
+            .maxDepth = 1.0,
+        };
+        vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+    }
 }
 
-fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTransfo, draw_data: *const c.ImDrawData, command_buffer: VkCommandBuffer) !void {
-    var err: VkResult = undefined;
+fn renderDrawData(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, draw_data: *const c.ImDrawData, command_buffer: VkCommandBuffer) !void {
+    const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
 
-    // Create or resize the vertex/index buffers
-    const vertex_size = @intCast(usize, draw_data.TotalVtxCount) * @sizeOf(c.ImDrawVert);
-    const index_size = @intCast(usize, draw_data.TotalIdxCount) * @sizeOf(c.ImDrawIdx);
-    if (frd.data[0].vertex == null or frd.data[0].vertex_size < vertex_size)
-        try createOrResizeBuffer(ctx, &frd.data[0].vertex, &frd.data[0].vertex_memory, &frd.data[0].vertex_size, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (frd.data[0].index == null or frd.data[0].index_size < index_size)
-        try createOrResizeBuffer(ctx, &frd.data[0].index, &frd.data[0].index_memory, &frd.data[0].index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-    // Upload vertex/index data into a single contiguous GPU buffer
-    {
-        var vtx_dst: [*]c.ImDrawVert = undefined;
-        var idx_dst: [*]c.ImDrawIdx = undefined;
-
-        err = vkMapMemory(ctx.device, frd.data[0].vertex_memory, 0, vertex_size, 0, @ptrCast([*c](?*c_void), &vtx_dst));
-        try checkVkResult(err);
-        err = vkMapMemory(ctx.device, frd.data[0].index_memory, 0, index_size, 0, @ptrCast([*c](?*c_void), &idx_dst));
-        try checkVkResult(err);
-
-        const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
-        for (lists) |cmd_list_ptr| {
-            const cmd_list = cmd_list_ptr.*;
-            const cVtx = @intCast(usize, cmd_list.VtxBuffer.Size);
-            const cItx = @intCast(usize, cmd_list.IdxBuffer.Size);
-            std.mem.copy(c.ImDrawVert, vtx_dst[0..cVtx], cmd_list.VtxBuffer.Data[0..cVtx]);
-            std.mem.copy(c.ImDrawIdx, idx_dst[0..cItx], cmd_list.IdxBuffer.Data[0..cItx]);
-            vtx_dst += @intCast(usize, cVtx);
-            idx_dst += @intCast(usize, cItx);
-        }
-        const ranges = [_]VkMappedMemoryRange{
-            VkMappedMemoryRange{
-                .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-                .pNext = null,
-                .memory = frd.data[0].vertex_memory,
-                .size = VK_WHOLE_SIZE,
-                .offset = 0,
-            },
-            VkMappedMemoryRange{
-                .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-                .pNext = null,
-                .memory = frd.data[0].index_memory,
-                .size = VK_WHOLE_SIZE,
-                .offset = 0,
-            },
-        };
-        err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
-        try checkVkResult(err);
-
-        vkUnmapMemory(ctx.device, frd.data[0].vertex_memory);
-        vkUnmapMemory(ctx.device, frd.data[0].index_memory);
-    }
-
-    // Create Descriptor Set:
-    if (frd.data[0].descriptor_set == null) {
-        const alloc_info = VkDescriptorSetAllocateInfo{
-            .sType = .VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .pNext = null,
-            .descriptorPool = ctx.descriptor_pool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &ctx.descriptor_set_layout,
-        };
-        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.data[0].descriptor_set);
-        try checkVkResult(err);
+    var primitive_storage: [1000]PrimitiveDrawData = undefined;
+    const primitives = primitive_storage[0..@intCast(usize, draw_data.CmdListsCount)];
+    for (lists) |cmd_list_ptr, i| {
+        const cmd_list = cmd_list_ptr.*;
+        primitives[i].vertices = cmd_list.VtxBuffer.Data[0..@intCast(usize, cmd_list.VtxBuffer.Size)];
+        primitives[i].indices = cmd_list.IdxBuffer.Data[0..@intCast(usize, cmd_list.IdxBuffer.Size)];
     }
 
     // Setup desired Vulkan state
-    setupRenderState(ctx, command_buffer, &frd.data[0], ctx.font_texture.view, displayTransfo);
+    try setupRenderState(ctx, command_buffer, frd, primitives, ctx.font_texture.view, displayTransfo);
 
     // Will project scissor/clipping rectangles into framebuffer space
     const clip_off = draw_data.DisplayPos; // (0,0) unless using multi-viewports
@@ -439,7 +463,6 @@ fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayT
     // (Because we merged all buffers into a single one, we maintain our own offset into them)
     var global_vtx_offset: u32 = 0;
     var global_idx_offset: u32 = 0;
-    const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
     for (lists) |cmd_list_ptr| {
         const cmd_list = cmd_list_ptr.*;
         for (cmd_list.CmdBuffer.Data[0..@intCast(usize, cmd_list.CmdBuffer.Size)]) |*pcmd| {
@@ -491,75 +514,20 @@ fn vec2vec(v: Vec2) c.ImVec2 {
     };
 }
 fn renderQuad(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, quad: Quad, command_buffer: VkCommandBuffer) !void {
-    var err: VkResult = undefined;
-
-    const vtxData = [_]c.ImDrawVert{
-        c.ImDrawVert{ .pos = vec2vec(quad.corners[0]), .uv = c.ImVec2{ .x = 0, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
-        c.ImDrawVert{ .pos = vec2vec(quad.corners[1]), .uv = c.ImVec2{ .x = 1, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
-        c.ImDrawVert{ .pos = vec2vec(quad.corners[2]), .uv = c.ImVec2{ .x = 1, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
-        c.ImDrawVert{ .pos = vec2vec(quad.corners[3]), .uv = c.ImVec2{ .x = 0, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
+    const primitives = [_]PrimitiveDrawData{
+        .{
+            .vertices = &[_]c.ImDrawVert{
+                c.ImDrawVert{ .pos = vec2vec(quad.corners[0]), .uv = c.ImVec2{ .x = 0, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
+                c.ImDrawVert{ .pos = vec2vec(quad.corners[1]), .uv = c.ImVec2{ .x = 1, .y = 0, .dummy = undefined }, .col = 0xFFFFFFFF },
+                c.ImDrawVert{ .pos = vec2vec(quad.corners[2]), .uv = c.ImVec2{ .x = 1, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
+                c.ImDrawVert{ .pos = vec2vec(quad.corners[3]), .uv = c.ImVec2{ .x = 0, .y = 1, .dummy = undefined }, .col = 0xFFFFFFFF },
+            },
+            .indices = &[_]c.ImDrawIdx{ 0, 1, 3, 1, 2, 3 },
+        },
     };
-    const idxData = [_]c.ImDrawIdx{ 0, 1, 3, 1, 2, 3 };
-
-    // Create or resize the vertex/index buffers
-    const vertex_size = vtxData.len * @sizeOf(c.ImDrawVert);
-    const index_size = idxData.len * @sizeOf(c.ImDrawIdx);
-    if (frd.vertex == null or frd.vertex_size < vertex_size)
-        try createOrResizeBuffer(ctx, &frd.vertex, &frd.vertex_memory, &frd.vertex_size, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (frd.index == null or frd.index_size < index_size)
-        try createOrResizeBuffer(ctx, &frd.index, &frd.index_memory, &frd.index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-    // Upload vertex/index data into a single contiguous GPU buffer
-    {
-        var vtx_dst: [*]c.ImDrawVert = undefined;
-        var idx_dst: [*]c.ImDrawIdx = undefined;
-
-        err = vkMapMemory(ctx.device, frd.vertex_memory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
-        try checkVkResult(err);
-        err = vkMapMemory(ctx.device, frd.index_memory, 0, index_size, 0, @ptrCast([*c]?*c_void, &idx_dst));
-        try checkVkResult(err);
-
-        std.mem.copy(c.ImDrawVert, vtx_dst[0..vtxData.len], &vtxData);
-        std.mem.copy(c.ImDrawIdx, idx_dst[0..idxData.len], &idxData);
-
-        const ranges = [_]VkMappedMemoryRange{
-            VkMappedMemoryRange{
-                .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-                .pNext = null,
-                .memory = frd.vertex_memory,
-                .size = VK_WHOLE_SIZE,
-                .offset = 0,
-            },
-            VkMappedMemoryRange{
-                .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-                .pNext = null,
-                .memory = frd.index_memory,
-                .size = VK_WHOLE_SIZE,
-                .offset = 0,
-            },
-        };
-        err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
-        try checkVkResult(err);
-
-        vkUnmapMemory(ctx.device, frd.vertex_memory);
-        vkUnmapMemory(ctx.device, frd.index_memory);
-    }
-
-    // Create Descriptor Set:
-    if (frd.descriptor_set == null) {
-        const alloc_info = VkDescriptorSetAllocateInfo{
-            .sType = .VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .pNext = null,
-            .descriptorPool = ctx.descriptor_pool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &ctx.descriptor_set_layout,
-        };
-        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.descriptor_set);
-        try checkVkResult(err);
-    }
 
     // Setup desired Vulkan state
-    setupRenderState(ctx, command_buffer, frd, quad.texture.view, displayTransfo);
+    try setupRenderState(ctx, command_buffer, frd, &primitives, quad.texture.view, displayTransfo);
 
     {
         const scissor = VkRect2D{
@@ -575,10 +543,10 @@ fn renderQuad(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: D
         vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
         // Draw
-        const idx_count = idxData.len;
+        const idx_count = @intCast(u32, primitives[0].indices.len);
         const idx_offset: i32 = 0;
         const vtx_offset: i32 = 0;
-        vkCmdDrawIndexed(command_buffer, idxData.len, 1, idx_offset, vtx_offset, 0);
+        vkCmdDrawIndexed(command_buffer, idx_count, 1, idx_offset, vtx_offset, 0);
     }
 }
 
@@ -1066,12 +1034,12 @@ fn createDeviceObjects(ctx: *Context) !void {
 }
 
 fn destroyDeviceObjects(ctx: *Context) void {
-    for (ctx.draw_texture_uploads.items) |*texupload| {
+    for (ctx.frame_texture_uploads.items) |*texupload| {
         destroyTextureUpload(ctx.device, texupload, ctx.vk_allocator);
     }
-    ctx.draw_texture_uploads.resize(0) catch unreachable;
+    ctx.frame_texture_uploads.resize(0) catch unreachable;
 
-    ctx.draw_quads.resize(0) catch unreachable;
+    ctx.frame_draw_quads.resize(0) catch unreachable;
 
     destroyTexture(ctx.device, &ctx.font_texture, ctx.vk_allocator);
 
@@ -1129,7 +1097,7 @@ fn imguiImplVulkanInit(ctx: *Context) !bool {
         try initTexture(ctx, &ctx.font_texture, @intCast(u32, width), @intCast(u32, height));
         c.ImFontAtlas_SetTexID(io.Fonts, @ptrCast(c.ImTextureID, ctx.font_texture.image));
 
-        const texupload = try ctx.draw_texture_uploads.addOne();
+        const texupload = try ctx.frame_texture_uploads.addOne();
         try initTextureUpload(ctx, texupload, pixels[0..upload_size], &ctx.font_texture);
     }
 
@@ -1150,10 +1118,10 @@ fn imguiImplVulkanShutdown(ctx: *Context) !void {
 pub fn blitPixels(ctx: *Context, corners: [4]Vec2, pixels: []const u8, width: u32, height: u32) !void {
     const t = try ctx.allocator.create(Texture);
     try initTexture(ctx, t, width, height);
-    const texupload = try ctx.draw_texture_uploads.addOne();
+    const texupload = try ctx.frame_texture_uploads.addOne();
     try initTextureUpload(ctx, texupload, pixels, t);
 
-    const q = try ctx.draw_quads.addOne();
+    const q = try ctx.frame_draw_quads.addOne();
     q.corners = corners;
     q.texture = t;
 }
@@ -1283,6 +1251,7 @@ fn createWindowCommandBuffers(physical_device: VkPhysicalDevice, device: VkDevic
 fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd: *VulkanWindow, descriptor_pool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks, w: u32, h: u32, min_image_count: u32) !void {
     var err: VkResult = undefined;
     const old_swapchain = wd.swapchain;
+    wd.swapchain = null;
     err = vkDeviceWaitIdle(device);
     try checkVkResult(err);
 
@@ -1375,6 +1344,7 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             frd.* = FrameRenderData{
                 .active_transcient_texture = ArrayList(*Texture).init(allocator),
                 .active_texture_uploads = ArrayList(TextureUpload).init(allocator),
+                .data = ArrayList(FrameRenderData.RenderData).init(allocator),
             };
         }
     }
@@ -1526,7 +1496,7 @@ fn destroySwapchainSemaphores(device: VkDevice, fsd: *SwapchainSemaphores, vk_al
 }
 
 fn destroyFrameRenderData(device: VkDevice, frd: *FrameRenderData, descriptor_pool: VkDescriptorPool, vk_allocator: ?*const VkAllocationCallbacks) void {
-    for (frd.data) |*data| {
+    for (frd.data.items) |*data| {
         if (data.descriptor_set != null) {
             _ = vkFreeDescriptorSets(device, descriptor_pool, 1, &data.descriptor_set);
             data.descriptor_set = null;
@@ -1550,6 +1520,7 @@ fn destroyFrameRenderData(device: VkDevice, frd: *FrameRenderData, descriptor_po
         data.vertex_size = 0;
         data.index_size = 0;
     }
+    frd.data.deinit();
 
     for (frd.active_texture_uploads.items) |*texupload| {
         destroyTextureUpload(device, texupload, vk_allocator);
@@ -1574,8 +1545,8 @@ pub fn init(title: [*:0]const u8, width: c_int, height: c_int, allocator: *Alloc
     errdefer allocator.destroy(ctx);
     ctx.* = Context{
         .allocator = allocator,
-        .draw_texture_uploads = ArrayList(TextureUpload).init(allocator),
-        .draw_quads = ArrayList(Quad).init(allocator),
+        .frame_texture_uploads = ArrayList(TextureUpload).init(allocator),
+        .frame_draw_quads = ArrayList(Quad).init(allocator),
     };
 
     const ok = imguiImpl_Init(title, width, height, ctx);
@@ -1587,8 +1558,8 @@ pub fn init(title: [*:0]const u8, width: c_int, height: c_int, allocator: *Alloc
 
 pub fn destroy(ctx: *Context) void {
     imguiImpl_Destroy(ctx);
-    ctx.draw_texture_uploads.deinit();
-    ctx.draw_quads.deinit();
+    ctx.frame_texture_uploads.deinit();
+    ctx.frame_draw_quads.deinit();
 
     ctx.allocator.destroy(ctx);
 }
@@ -1600,7 +1571,7 @@ pub fn beginFrame(ctx: *Context) void {
     c.igNewFrame();
 }
 
-fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
+fn frameRender(ctx: *Context, wd: *VulkanWindow, draw_data: *const c.ImDrawData) !void {
     const u64max = std.math.maxInt(u64);
 
     const image_acquired_semaphore = wd.frame_semaphores[wd.semaphore_index].image_acquired_semaphore;
@@ -1649,11 +1620,11 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
         }
         frd.active_transcient_texture.resize(0) catch unreachable;
 
-        for (ctx.draw_texture_uploads.items) |*texupload| {
+        for (ctx.frame_texture_uploads.items) |*texupload| {
             flushTextureUpload(ctx, fd.command_buffer, texupload);
             try frd.active_texture_uploads.append(texupload.*);
         }
-        ctx.draw_texture_uploads.resize(0) catch unreachable;
+        ctx.frame_texture_uploads.resize(0) catch unreachable;
     }
 
     {
@@ -1670,7 +1641,6 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
     }
 
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-    const draw_data: *c.ImDrawData = c.igGetDrawData();
     if (wd.width > 0 and wd.height > 0 and draw_data.TotalVtxCount > 0) {
 
         // Our visible imgui space lies from draw_data.DisplayPps (top left) to draw_data.DisplayPos+data_data.DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
@@ -1688,19 +1658,26 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
             .fb_height = wd.height,
         };
 
-        for (ctx.draw_quads.items) |quad| {
-            try renderQuad(ctx, &frd.data[1], displayTransfo, quad, fd.command_buffer);
+        // make room for render data:
+        const len_for_frame = 1 + ctx.frame_draw_quads.items.len;
+        if (len_for_frame > frd.data.items.len) {
+            const cur_len = frd.data.items.len;
+            try frd.data.appendNTimes(.{}, (len_for_frame - frd.data.items.len));
         }
-        try renderDrawData(ctx, frd, displayTransfo, draw_data, fd.command_buffer);
+
+        for (ctx.frame_draw_quads.items) |quad, i| {
+            try renderQuad(ctx, &frd.data.items[1 + i], displayTransfo, quad, fd.command_buffer);
+        }
+        try renderDrawData(ctx, &frd.data.items[0], displayTransfo, draw_data, fd.command_buffer);
     }
 
     vkCmdEndRenderPass(fd.command_buffer);
 
     {
-        for (ctx.draw_quads.items) |*quad| {
+        for (ctx.frame_draw_quads.items) |*quad| {
             try frd.active_transcient_texture.append(quad.texture);
         }
-        ctx.draw_quads.resize(0) catch unreachable;
+        ctx.frame_draw_quads.resize(0) catch unreachable;
     }
 
     {
@@ -1756,27 +1733,31 @@ fn frameRebuildSwapchain(ctx: *Context) !void {
 
 pub fn endFrame(ctx: *Context) !void {
     c.igRender();
+    const draw_data: *c.ImDrawData = c.igGetDrawData();
 
-    var swapchain_ok = true;
-    while (true) {
-        frameRender(ctx, &ctx.main_window_data) catch |err| switch (err) {
-            error.SwapchainOutOfDate => {
-                try frameRebuildSwapchain(ctx);
-                continue;
-            }, // try again
-            error.VulkanError => return error.VulkanError,
-            error.OutOfMemory => return error.OutOfMemory,
-        };
+    const is_minimized = (draw_data.DisplaySize.x <= 0 or draw_data.DisplaySize.y <= 0);
+    const force_render = true; // TODO BUG: still need to flush the textureuploads even if no present
+    if (!is_minimized or force_render) {
+        while (true) {
+            frameRender(ctx, &ctx.main_window_data, draw_data) catch |err| switch (err) {
+                error.SwapchainOutOfDate => {
+                    try frameRebuildSwapchain(ctx);
+                    continue;
+                }, // try again
+                error.VulkanError => return error.VulkanError,
+                error.OutOfMemory => return error.OutOfMemory,
+            };
 
-        framePresent(ctx.queue, &ctx.main_window_data) catch |err| switch (err) {
-            error.SwapchainOutOfDate => {
-                try frameRebuildSwapchain(ctx);
-                continue;
-            }, // try again
-            error.VulkanError => return error.VulkanError,
-        };
+            framePresent(ctx.queue, &ctx.main_window_data) catch |err| switch (err) {
+                error.SwapchainOutOfDate => {
+                    try frameRebuildSwapchain(ctx);
+                    continue;
+                }, // try again
+                error.VulkanError => return error.VulkanError,
+            };
 
-        break; // success
+            break; // success
+        }
     }
 }
 
