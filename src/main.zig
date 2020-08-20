@@ -93,12 +93,12 @@ fn pointToMandel(r: Mandelbrot.RectOriented, p: Point) Complex {
     return r.origin.add(axis_re).add(axis_im);
 }
 
-fn normalise_buffer_dim(v: u32, max: u32) u32 {
+fn normaliseBufferDim(v: u32, max: u32) u32 {
     const x = if (v > max) max else v;
     return x - x % 4;
 }
 
-fn tagNameZ(v: var, storage: []u8) [:0]const u8 {
+fn tagNameZ(v: anytype, storage: []u8) [:0]const u8 {
     const name = @tagName(v);
     std.mem.copy(u8, storage, name);
     storage[name.len] = 0;
@@ -338,22 +338,22 @@ pub fn main() !void {
             .idle => { // start a new computation if parameters dirty
                 switch (mandel_compute_state.dirty) {
                     .changed => {
-                        mandel_compute_state.changed_timestamp_ms = std.time.milliTimestamp();
+                        mandel_compute_state.changed_timestamp_ms = @intCast(u64, std.time.milliTimestamp());
 
                         const d = @intCast(u32, quality_preview.resolution_divider);
-                        mandel_levels_width = normalise_buffer_dim(screen_width / d, mandel_max_width);
-                        mandel_levels_height = normalise_buffer_dim(screen_height / d, mandel_max_height);
+                        mandel_levels_width = normaliseBufferDim(screen_width / d, mandel_max_width);
+                        mandel_levels_height = normaliseBufferDim(screen_height / d, mandel_max_height);
                         mandel_compute_state.interrupt = false;
                         mandel_compute_state.callframe = async Mandelbrot.computeLevels(mandel_levels, mandel_levels_width, mandel_levels_height, mandel_compute_state.mandelrect, @intCast(u16, quality_preview.max_iter), @intCast(u32, quality_preview.supersamples), @intCast(u32, quality_preview.precision_bits), &mandel_compute_state.status, &mandel_compute_state.interrupt);
 
                         mandel_compute_state.dirty = .previewed;
                     },
                     .previewed => {
-                        mandel_compute_state.previewed_timestamp_ms = std.time.milliTimestamp();
+                        mandel_compute_state.previewed_timestamp_ms = @intCast(u64, std.time.milliTimestamp());
 
                         const d = @intCast(u32, quality_normal.resolution_divider);
-                        const w = normalise_buffer_dim(screen_width / d, mandel_max_width);
-                        const h = normalise_buffer_dim(screen_height / d, mandel_max_height);
+                        const w = normaliseBufferDim(screen_width / d, mandel_max_width);
+                        const h = normaliseBufferDim(screen_height / d, mandel_max_height);
                         if (continuous_refresh and (h != mandel_levels_height or w != mandel_levels_width))
                             Mandelbrot.rescaleLevels(mandel_levels, mandel_levels_width, mandel_levels_height, w, h);
                         mandel_levels_width = w;
@@ -384,7 +384,7 @@ pub fn main() !void {
                     mandel_pixels_height = mandel_levels_height;
                     Mandelbrot.computeColors(mandel_levels, mandel_pixels, mandel_pixels_width, mandel_pixels_height);
                 }
-                mandel_compute_state.done_timestamp_ms = std.time.milliTimestamp();
+                mandel_compute_state.done_timestamp_ms = @intCast(u64, std.time.milliTimestamp());
             },
         }
 

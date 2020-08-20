@@ -14,8 +14,8 @@ const range_Fixed = (1 << @typeInfo(Fixed).Int.bits) - 1;
 pub const Real = f128;
 pub const Complex = std.math.Complex(Real);
 
-// f64 f128 work fine, f16 llvm doesn't like   (obvisously, fixed point with lots of bits would be needed to zoom further)
-fn getMandelbrotComputer(comptime supersamples: usize, RealType: type) type {
+// f32 f64 f128 work fine, f16 llvm doesn't like   (obvisously, fixed point with lots of bits would be needed to zoom further)
+fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
     const vec_len = supersamples * supersamples;
     return struct {
         const Complexs = struct {
@@ -174,25 +174,25 @@ pub fn computeLevels(buf: []Fixed, width: u32, height: u32, rect: RectOriented, 
     const func = switch (real_bits) {
         //0...16 => @panic("f16 in vector doesn't work so great  with llvm10"),
         0...32 => switch (supersamples) {
-            1 => getMandelbrotComputer(1, f32).computeOnePoint,
-            2 => getMandelbrotComputer(2, f32).computeOnePoint,
-            3 => getMandelbrotComputer(3, f32).computeOnePoint,
-            4 => getMandelbrotComputer(4, f32).computeOnePoint,
-            else => getMandelbrotComputer(5, f32).computeOnePoint,
+            1 => MandelbrotComputer(1, f32).computeOnePoint,
+            2 => MandelbrotComputer(2, f32).computeOnePoint,
+            3 => MandelbrotComputer(3, f32).computeOnePoint,
+            4 => MandelbrotComputer(4, f32).computeOnePoint,
+            else => MandelbrotComputer(5, f32).computeOnePoint,
         },
         33...64 => switch (supersamples) {
-            1 => getMandelbrotComputer(1, f64).computeOnePoint,
-            2 => getMandelbrotComputer(2, f64).computeOnePoint,
-            3 => getMandelbrotComputer(3, f64).computeOnePoint,
-            4 => getMandelbrotComputer(4, f64).computeOnePoint,
-            else => getMandelbrotComputer(5, f64).computeOnePoint,
+            1 => MandelbrotComputer(1, f64).computeOnePoint,
+            2 => MandelbrotComputer(2, f64).computeOnePoint,
+            3 => MandelbrotComputer(3, f64).computeOnePoint,
+            4 => MandelbrotComputer(4, f64).computeOnePoint,
+            else => MandelbrotComputer(5, f64).computeOnePoint,
         },
         else => switch (supersamples) {
-            1 => getMandelbrotComputer(1, f128).computeOnePoint,
-            2 => getMandelbrotComputer(2, f128).computeOnePoint,
-            3 => getMandelbrotComputer(3, f128).computeOnePoint,
-            4 => getMandelbrotComputer(4, f128).computeOnePoint,
-            else => getMandelbrotComputer(5, f128).computeOnePoint,
+            1 => MandelbrotComputer(1, f128).computeOnePoint,
+            2 => MandelbrotComputer(2, f128).computeOnePoint,
+            3 => MandelbrotComputer(3, f128).computeOnePoint,
+            4 => MandelbrotComputer(4, f128).computeOnePoint,
+            else => MandelbrotComputer(5, f128).computeOnePoint,
         },
     };
 
@@ -223,7 +223,7 @@ pub fn drawSetAscii(rect: RectOriented) void {
     while (lin < height) : (lin += 1) {
         var col: u32 = 0;
         while (col < width) : (col += 1) {
-            const level = getMandelbrotComputer(3, f32).computeOnePoint(col, lin, width, height, rect, 150);
+            const level = MandelbrotComputer(3, f32).computeOnePoint(col, lin, width, height, rect, 150);
             span[col] = grayscale[(level * grayscale.len) / range_Fixed];
         }
         warn("{}\n", .{span});
@@ -280,7 +280,7 @@ fn saturate(v: f32) u8 {
     }
 }
 
-fn saturate4(vals: var) Vector(4, u8) {
+fn saturate4(vals: anytype) Vector(4, u8) {
     return [_]u8{
         saturate(vals[0]),
         saturate(vals[1]),
@@ -289,7 +289,7 @@ fn saturate4(vals: var) Vector(4, u8) {
     };
 }
 
-fn intCast4(comptime T: type, vals: var) Vector(4, T) {
+fn intCast4(comptime T: type, vals: anytype) Vector(4, T) {
     return [_]T{
         @intCast(T, vals[0]),
         @intCast(T, vals[1]),
@@ -298,7 +298,7 @@ fn intCast4(comptime T: type, vals: var) Vector(4, T) {
     };
 }
 
-fn floatCast4(comptime T: type, vals: var) Vector(4, T) {
+fn floatCast4(comptime T: type, vals: anytype) Vector(4, T) {
     return [_]T{
         @floatCast(T, vals[0]),
         @floatCast(T, vals[1]),
@@ -307,7 +307,7 @@ fn floatCast4(comptime T: type, vals: var) Vector(4, T) {
     };
 }
 
-fn intToFloat4(comptime T: type, vals: var) Vector(4, T) {
+fn intToFloat4(comptime T: type, vals: anytype) Vector(4, T) {
     return [_]T{
         @intToFloat(T, vals[0]),
         @intToFloat(T, vals[1]),
@@ -336,7 +336,7 @@ fn levelsToColors(level: Vector(4, u16)) Vector(4, u32) {
     //const l = @sqrt(l0 * knorm); // faster and prettier... (but still expensive)
 
     // prettiest
-    const knorm = @splat(4, 1.6667 / @log2(@as(f32, range_Fixed)+1));
+    const knorm = @splat(4, 1.6667 / @log2(@as(f32, range_Fixed) + 1));
     const l = @log2(l0 + @splat(4, @as(f32, 1.0))) * knorm;
 
     const k2 = @splat(4, @as(f32, 1.0 / 1.35));

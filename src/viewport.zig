@@ -13,39 +13,38 @@ usingnamespace @cImport({
 const c = @cImport({
     @cDefine("CIMGUI_DEFINE_ENUMS_AND_STRUCTS", "1");
     @cInclude("cimgui.h");
-    @cInclude("vulkan/vulkan.h");
 });
 
-const DVULKAN_DEBUG_REPORT = true;
+const DVULKAN_DEBUG_REPORT = (std.builtin.mode == .Debug);
 
 const SwapchainFrame = struct {
-    commandPool: VkCommandPool = null,
-    commandBuffer: VkCommandBuffer = null,
+    command_pool: VkCommandPool = null,
+    command_buffer: VkCommandBuffer = null,
     fence: VkFence = null,
     backbuffer: VkImage = null,
-    backbufferView: VkImageView = null,
+    backbuffer_view: VkImageView = null,
     framebuffer: VkFramebuffer = null,
 };
 const SwapchainSemaphores = struct {
-    imageAcquiredSemaphore: VkSemaphore = null,
-    renderCompleteSemaphore: VkSemaphore = null,
+    image_acquired_semaphore: VkSemaphore = null,
+    render_complete_semaphore: VkSemaphore = null,
 };
 const FrameRenderData = struct {
-    const RenderData = struct {
-        vertexMemory: VkDeviceMemory = null,
-        indexMemory: VkDeviceMemory = null,
-        vertexSize: VkDeviceSize = 0,
-        indexSize: VkDeviceSize = 0,
+    const RenderData = struct { //  données pour un drawcall primitive
+        vertex_memory: VkDeviceMemory = null,
+        index_memory: VkDeviceMemory = null,
+        vertex_size: VkDeviceSize = 0,
+        index_size: VkDeviceSize = 0,
         vertex: VkBuffer = null,
         index: VkBuffer = null,
-        descriptorSet: VkDescriptorSet = null,
+        descriptor_set: VkDescriptorSet = null,
     };
 
-    data: [2]RenderData = [_]RenderData{ RenderData{}, RenderData{} },
+    data: [2]RenderData = [_]RenderData{ .{}, .{} },
 
     // mm devrait pas être là pour le multiwindow?
-    activeTextureUploads: ArrayList(TextureUpload),
-    activeTranscientTexture: ArrayList(*Texture),
+    active_texture_uploads: ArrayList(TextureUpload),
+    active_transcient_texture: ArrayList(*Texture),
 };
 
 const VulkanWindow = struct {
@@ -53,51 +52,50 @@ const VulkanWindow = struct {
     height: u32 = 0,
     swapchain: VkSwapchainKHR = null,
     surface: VkSurfaceKHR = null,
-    surfaceFormat: VkSurfaceFormatKHR = undefined,
-    presentMode: VkPresentModeKHR = undefined,
-    renderPass: VkRenderPass = null,
-    clearEnable: bool = false,
-    clearValue: VkClearValue = undefined,
+    surface_format: VkSurfaceFormatKHR = undefined,
+    present_mode: VkPresentModeKHR = undefined,
+    render_pass: VkRenderPass = null,
+    clear_enable: bool = false,
+    clear_value: VkClearValue = undefined,
 
-    frameIndex: u32 = 0,
+    frame_index: u32 = 0,
     frames: []SwapchainFrame = &[0]SwapchainFrame{},
-    semaphoreIndex: u32 = 0,
-    frameSemaphores: []SwapchainSemaphores = &[0]SwapchainSemaphores{},
-    renderDataIndex: u32 = 0,
-    frameRenderData: []FrameRenderData = &[0]FrameRenderData{},
+    semaphore_index: u32 = 0,
+    frame_semaphores: []SwapchainSemaphores = &[0]SwapchainSemaphores{},
+    render_data_index: u32 = 0,
+    frame_render_data: []FrameRenderData = &[0]FrameRenderData{},
 };
 
 const Context = struct {
     instance: VkInstance = null,
-    physicalDevice: VkPhysicalDevice = null,
+    physical_device: VkPhysicalDevice = null,
     device: VkDevice = null,
-    debugReport: VkDebugReportCallbackEXT = null,
+    debug_report: VkDebugReportCallbackEXT = null,
 
     vk_allocator: ?*const VkAllocationCallbacks = null,
     allocator: *Allocator,
 
-    descriptorPool: VkDescriptorPool = null,
-    descriptorSetLayout: VkDescriptorSetLayout = null,
+    descriptor_pool: VkDescriptorPool = null,
+    descriptor_set_layout: VkDescriptorSetLayout = null,
 
-    pipelineLayout: VkPipelineLayout = null,
+    pipeline_layout: VkPipelineLayout = null,
     pipeline: VkPipeline = null,
-    pipelineCache: VkPipelineCache = null,
+    pipeline_cache: VkPipelineCache = null,
 
     queue: VkQueue = null,
-    mainWindowData: VulkanWindow = VulkanWindow{},
+    main_window_data: VulkanWindow = VulkanWindow{},
 
-    MSAASamples: VkSampleCountFlagBits = .VK_SAMPLE_COUNT_1_BIT,
-    bufferMemoryAlignment: VkDeviceSize = 256,
-    pipelineCreateFlags: VkPipelineCreateFlags = 0x00,
-    minImageCount: u32 = 2,
-    queueFamily: u32 = 0xFFFFFFFF,
+    MSAA_samples: VkSampleCountFlagBits = .VK_SAMPLE_COUNT_1_BIT,
+    buffer_memory_alignment: VkDeviceSize = 256,
+    pipeline_create_flags: VkPipelineCreateFlags = 0x00,
+    min_image_count: u32 = 2,
+    queue_family: u32 = 0xFFFFFFFF,
 
-    samplerTiling: VkSampler = null,
-    fontTexture: Texture = Texture{},
-    //texturePool: ArrayList(Texture),
+    tiling_sampler: VkSampler = null,
+    font_texture: Texture = Texture{},
 
-    drawTextureUploads: ArrayList(TextureUpload),
-    drawQuads: ArrayList(Quad),
+    draw_texture_uploads: ArrayList(TextureUpload),
+    draw_quads: ArrayList(Quad),
 };
 
 pub const Vec2 = struct {
@@ -121,7 +119,7 @@ const TextureUpload = struct {
     texture: *const Texture = undefined,
 };
 
-fn check_vk_result(err: VkResult) !void {
+fn checkVkResult(err: VkResult) !void {
     if (err == .VK_SUCCESS) return;
     warn("VkResult: {}\n", .{err});
     if (@enumToInt(err) < 0)
@@ -243,7 +241,7 @@ const __glsl_shader_frag_spv = [_]u32{
 
 fn getMemoryType(ctx: *Context, properties: VkMemoryPropertyFlags, type_bits: u32) u32 {
     var prop: VkPhysicalDeviceMemoryProperties = undefined;
-    vkGetPhysicalDeviceMemoryProperties(ctx.physicalDevice, &prop);
+    vkGetPhysicalDeviceMemoryProperties(ctx.physical_device, &prop);
     var i: u32 = 0;
     while (i < prop.memoryTypeCount) : (i += 1) {
         const mask: u32 = @as(u32, 1) << @intCast(u5, i);
@@ -261,7 +259,7 @@ fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDevi
     if (buffer_memory.* != null)
         vkFreeMemory(ctx.device, buffer_memory.*, ctx.vk_allocator);
 
-    const vertex_buffer_size_aligned: VkDeviceSize = ((new_size - 1) / ctx.bufferMemoryAlignment + 1) * ctx.bufferMemoryAlignment;
+    const vertex_buffer_size_aligned: VkDeviceSize = ((new_size - 1) / ctx.buffer_memory_alignment + 1) * ctx.buffer_memory_alignment;
     const buffer_info = VkBufferCreateInfo{
         .sType = .VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = null,
@@ -273,11 +271,11 @@ fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDevi
         .pQueueFamilyIndices = null,
     };
     err = vkCreateBuffer(ctx.device, &buffer_info, ctx.vk_allocator, buffer);
-    try check_vk_result(err);
+    try checkVkResult(err);
 
     var req: VkMemoryRequirements = undefined;
     vkGetBufferMemoryRequirements(ctx.device, buffer.*, &req);
-    ctx.bufferMemoryAlignment = if (ctx.bufferMemoryAlignment > req.alignment) ctx.bufferMemoryAlignment else req.alignment;
+    ctx.buffer_memory_alignment = if (ctx.buffer_memory_alignment > req.alignment) ctx.buffer_memory_alignment else req.alignment;
     const alloc_info = VkMemoryAllocateInfo{
         .sType = .VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .pNext = null,
@@ -285,10 +283,10 @@ fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDevi
         .memoryTypeIndex = getMemoryType(ctx, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits),
     };
     err = vkAllocateMemory(ctx.device, &alloc_info, ctx.vk_allocator, buffer_memory);
-    try check_vk_result(err);
+    try checkVkResult(err);
 
     err = vkBindBufferMemory(ctx.device, buffer.*, buffer_memory.*, 0);
-    try check_vk_result(err);
+    try checkVkResult(err);
     p_buffer_size.* = new_size;
 }
 
@@ -298,22 +296,22 @@ const DisplayTransfo = struct {
     fb_width: u32,
     fb_height: u32,
 };
-fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, data: *const FrameRenderData.RenderData, imageView: VkImageView, displayTransfo: DisplayTransfo) void {
+fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *const FrameRenderData.RenderData, imageView: VkImageView, displayTransfo: DisplayTransfo) void {
 
     // Update the Descriptor Set:
     {
         const desc_image = [_]VkDescriptorImageInfo{
-            VkDescriptorImageInfo{
-                .sampler = ctx.samplerTiling,
+            .{
+                .sampler = ctx.tiling_sampler,
                 .imageView = imageView,
                 .imageLayout = .VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             },
         };
         const write_desc = [_]VkWriteDescriptorSet{
-            VkWriteDescriptorSet{
+            .{
                 .sType = .VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .pNext = null,
-                .dstSet = data.descriptorSet,
+                .dstSet = frd.descriptor_set,
                 .dstBinding = 0,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
@@ -329,8 +327,8 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, data: *const
     // Bind pipeline and descriptor sets:
     {
         vkCmdBindPipeline(command_buffer, .VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipeline);
-        const desc_set = [_]VkDescriptorSet{data.descriptorSet};
-        vkCmdBindDescriptorSets(command_buffer, .VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipelineLayout, 0, desc_set.len, &desc_set, 0, null);
+        const desc_set = [_]VkDescriptorSet{frd.descriptor_set};
+        vkCmdBindDescriptorSets(command_buffer, .VK_PIPELINE_BIND_POINT_GRAPHICS, ctx.pipeline_layout, 0, desc_set.len, &desc_set, 0, null);
     }
 
     // Setup viewport:
@@ -348,45 +346,45 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, data: *const
 
     // Bind Vertex And index Buffer:
     {
-        const vertex_buffers = [_]VkBuffer{data.vertex};
+        const vertex_buffers = [_]VkBuffer{frd.vertex};
         const vertex_offset = [_]VkDeviceSize{0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffers, &vertex_offset);
 
         assert(@sizeOf(c.ImDrawIdx) == 2);
-        vkCmdBindIndexBuffer(command_buffer, data.index, 0, .VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(command_buffer, frd.index, 0, .VK_INDEX_TYPE_UINT16);
     }
 
     // Setup scale and translation:
     {
-        vkCmdPushConstants(command_buffer, ctx.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 0, @sizeOf(f32) * 2, &displayTransfo.scale);
-        vkCmdPushConstants(command_buffer, ctx.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 2, @sizeOf(f32) * 2, &displayTransfo.translate);
+        vkCmdPushConstants(command_buffer, ctx.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 0, @sizeOf(f32) * 2, &displayTransfo.scale);
+        vkCmdPushConstants(command_buffer, ctx.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, @sizeOf(f32) * 2, @sizeOf(f32) * 2, &displayTransfo.translate);
     }
 }
 
-fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTransfo, draw_data: *c.ImDrawData, command_buffer: VkCommandBuffer) !void {
+fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTransfo, draw_data: *const c.ImDrawData, command_buffer: VkCommandBuffer) !void {
     var err: VkResult = undefined;
 
     // Create or resize the vertex/index buffers
     const vertex_size = @intCast(usize, draw_data.TotalVtxCount) * @sizeOf(c.ImDrawVert);
     const index_size = @intCast(usize, draw_data.TotalIdxCount) * @sizeOf(c.ImDrawIdx);
-    if (frd.data[0].vertex == null or frd.data[0].vertexSize < vertex_size)
-        try createOrResizeBuffer(ctx, &frd.data[0].vertex, &frd.data[0].vertexMemory, &frd.data[0].vertexSize, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (frd.data[0].index == null or frd.data[0].indexSize < index_size)
-        try createOrResizeBuffer(ctx, &frd.data[0].index, &frd.data[0].indexMemory, &frd.data[0].indexSize, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    if (frd.data[0].vertex == null or frd.data[0].vertex_size < vertex_size)
+        try createOrResizeBuffer(ctx, &frd.data[0].vertex, &frd.data[0].vertex_memory, &frd.data[0].vertex_size, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    if (frd.data[0].index == null or frd.data[0].index_size < index_size)
+        try createOrResizeBuffer(ctx, &frd.data[0].index, &frd.data[0].index_memory, &frd.data[0].index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     // Upload vertex/index data into a single contiguous GPU buffer
     {
         var vtx_dst: [*]c.ImDrawVert = undefined;
         var idx_dst: [*]c.ImDrawIdx = undefined;
 
-        err = vkMapMemory(ctx.device, frd.data[0].vertexMemory, 0, vertex_size, 0, @ptrCast([*c](?*c_void), &vtx_dst));
-        try check_vk_result(err);
-        err = vkMapMemory(ctx.device, frd.data[0].indexMemory, 0, index_size, 0, @ptrCast([*c](?*c_void), &idx_dst));
-        try check_vk_result(err);
+        err = vkMapMemory(ctx.device, frd.data[0].vertex_memory, 0, vertex_size, 0, @ptrCast([*c](?*c_void), &vtx_dst));
+        try checkVkResult(err);
+        err = vkMapMemory(ctx.device, frd.data[0].index_memory, 0, index_size, 0, @ptrCast([*c](?*c_void), &idx_dst));
+        try checkVkResult(err);
 
-        var n: u32 = 0;
-        while (n < @intCast(u32, draw_data.CmdListsCount)) : (n += 1) {
-            const cmd_list = draw_data.CmdLists[n].*;
+        const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
+        for (lists) |cmd_list_ptr| {
+            const cmd_list = cmd_list_ptr.*;
             const cVtx = @intCast(usize, cmd_list.VtxBuffer.Size);
             const cItx = @intCast(usize, cmd_list.IdxBuffer.Size);
             std.mem.copy(c.ImDrawVert, vtx_dst[0..cVtx], cmd_list.VtxBuffer.Data[0..cVtx]);
@@ -398,40 +396,40 @@ fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayT
             VkMappedMemoryRange{
                 .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
                 .pNext = null,
-                .memory = frd.data[0].vertexMemory,
+                .memory = frd.data[0].vertex_memory,
                 .size = VK_WHOLE_SIZE,
                 .offset = 0,
             },
             VkMappedMemoryRange{
                 .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
                 .pNext = null,
-                .memory = frd.data[0].indexMemory,
+                .memory = frd.data[0].index_memory,
                 .size = VK_WHOLE_SIZE,
                 .offset = 0,
             },
         };
         err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
-        vkUnmapMemory(ctx.device, frd.data[0].vertexMemory);
-        vkUnmapMemory(ctx.device, frd.data[0].indexMemory);
+        vkUnmapMemory(ctx.device, frd.data[0].vertex_memory);
+        vkUnmapMemory(ctx.device, frd.data[0].index_memory);
     }
 
     // Create Descriptor Set:
-    if (frd.data[0].descriptorSet == null) {
+    if (frd.data[0].descriptor_set == null) {
         const alloc_info = VkDescriptorSetAllocateInfo{
             .sType = .VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = null,
-            .descriptorPool = ctx.descriptorPool,
+            .descriptorPool = ctx.descriptor_pool,
             .descriptorSetCount = 1,
-            .pSetLayouts = &ctx.descriptorSetLayout,
+            .pSetLayouts = &ctx.descriptor_set_layout,
         };
-        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.data[0].descriptorSet);
-        try check_vk_result(err);
+        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.data[0].descriptor_set);
+        try checkVkResult(err);
     }
 
     // Setup desired Vulkan state
-    setupRenderState(ctx, command_buffer, &frd.data[0], ctx.fontTexture.view, displayTransfo);
+    setupRenderState(ctx, command_buffer, &frd.data[0], ctx.font_texture.view, displayTransfo);
 
     // Will project scissor/clipping rectangles into framebuffer space
     const clip_off = draw_data.DisplayPos; // (0,0) unless using multi-viewports
@@ -441,12 +439,10 @@ fn renderDrawData(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayT
     // (Because we merged all buffers into a single one, we maintain our own offset into them)
     var global_vtx_offset: u32 = 0;
     var global_idx_offset: u32 = 0;
-    var n: u32 = 0;
-    while (n < @intCast(u32, draw_data.CmdListsCount)) : (n += 1) {
-        const cmd_list = draw_data.CmdLists[n].*;
-        var cmd_i: u32 = 0;
-        while (cmd_i < @intCast(u32, cmd_list.CmdBuffer.Size)) : (cmd_i += 1) {
-            const pcmd = &cmd_list.CmdBuffer.Data[cmd_i];
+    const lists = if (draw_data.CmdListsCount > 0) draw_data.CmdLists.?[0..@intCast(u32, draw_data.CmdListsCount)] else &[0][*c]c.ImDrawList{};
+    for (lists) |cmd_list_ptr| {
+        const cmd_list = cmd_list_ptr.*;
+        for (cmd_list.CmdBuffer.Data[0..@intCast(usize, cmd_list.CmdBuffer.Size)]) |*pcmd| {
             assert(pcmd.UserCallback == null);
 
             // Project scissor/clipping rectangles into framebuffer space
@@ -494,7 +490,7 @@ fn vec2vec(v: Vec2) c.ImVec2 {
         .dummy = undefined,
     };
 }
-fn renderQuad(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTransfo, quad: Quad, command_buffer: VkCommandBuffer) !void {
+fn renderQuad(ctx: *Context, frd: *FrameRenderData.RenderData, displayTransfo: DisplayTransfo, quad: Quad, command_buffer: VkCommandBuffer) !void {
     var err: VkResult = undefined;
 
     const vtxData = [_]c.ImDrawVert{
@@ -506,23 +502,22 @@ fn renderQuad(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTrans
     const idxData = [_]c.ImDrawIdx{ 0, 1, 3, 1, 2, 3 };
 
     // Create or resize the vertex/index buffers
-    const data = &frd.data[1];
     const vertex_size = vtxData.len * @sizeOf(c.ImDrawVert);
     const index_size = idxData.len * @sizeOf(c.ImDrawIdx);
-    if (data.vertex == null or data.vertexSize < vertex_size)
-        try createOrResizeBuffer(ctx, &data.vertex, &data.vertexMemory, &data.vertexSize, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (data.index == null or data.indexSize < index_size)
-        try createOrResizeBuffer(ctx, &data.index, &data.indexMemory, &data.indexSize, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    if (frd.vertex == null or frd.vertex_size < vertex_size)
+        try createOrResizeBuffer(ctx, &frd.vertex, &frd.vertex_memory, &frd.vertex_size, vertex_size, .VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    if (frd.index == null or frd.index_size < index_size)
+        try createOrResizeBuffer(ctx, &frd.index, &frd.index_memory, &frd.index_size, index_size, .VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     // Upload vertex/index data into a single contiguous GPU buffer
     {
         var vtx_dst: [*]c.ImDrawVert = undefined;
         var idx_dst: [*]c.ImDrawIdx = undefined;
 
-        err = vkMapMemory(ctx.device, data.vertexMemory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
-        try check_vk_result(err);
-        err = vkMapMemory(ctx.device, data.indexMemory, 0, index_size, 0, @ptrCast([*c]?*c_void, &idx_dst));
-        try check_vk_result(err);
+        err = vkMapMemory(ctx.device, frd.vertex_memory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
+        try checkVkResult(err);
+        err = vkMapMemory(ctx.device, frd.index_memory, 0, index_size, 0, @ptrCast([*c]?*c_void, &idx_dst));
+        try checkVkResult(err);
 
         std.mem.copy(c.ImDrawVert, vtx_dst[0..vtxData.len], &vtxData);
         std.mem.copy(c.ImDrawIdx, idx_dst[0..idxData.len], &idxData);
@@ -531,40 +526,40 @@ fn renderQuad(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTrans
             VkMappedMemoryRange{
                 .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
                 .pNext = null,
-                .memory = data.vertexMemory,
+                .memory = frd.vertex_memory,
                 .size = VK_WHOLE_SIZE,
                 .offset = 0,
             },
             VkMappedMemoryRange{
                 .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
                 .pNext = null,
-                .memory = data.indexMemory,
+                .memory = frd.index_memory,
                 .size = VK_WHOLE_SIZE,
                 .offset = 0,
             },
         };
         err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
-        vkUnmapMemory(ctx.device, data.vertexMemory);
-        vkUnmapMemory(ctx.device, data.indexMemory);
+        vkUnmapMemory(ctx.device, frd.vertex_memory);
+        vkUnmapMemory(ctx.device, frd.index_memory);
     }
 
     // Create Descriptor Set:
-    if (data.descriptorSet == null) {
+    if (frd.descriptor_set == null) {
         const alloc_info = VkDescriptorSetAllocateInfo{
             .sType = .VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = null,
-            .descriptorPool = ctx.descriptorPool,
+            .descriptorPool = ctx.descriptor_pool,
             .descriptorSetCount = 1,
-            .pSetLayouts = &ctx.descriptorSetLayout,
+            .pSetLayouts = &ctx.descriptor_set_layout,
         };
-        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &data.descriptorSet);
-        try check_vk_result(err);
+        err = vkAllocateDescriptorSets(ctx.device, &alloc_info, &frd.descriptor_set);
+        try checkVkResult(err);
     }
 
     // Setup desired Vulkan state
-    setupRenderState(ctx, command_buffer, data, quad.texture.view, displayTransfo);
+    setupRenderState(ctx, command_buffer, frd, quad.texture.view, displayTransfo);
 
     {
         const scissor = VkRect2D{
@@ -580,10 +575,10 @@ fn renderQuad(ctx: *Context, frd: *FrameRenderData, displayTransfo: DisplayTrans
         vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
         // Draw
-        const idxCount = idxData.len;
-        const idxOffset: i32 = 0;
-        const vtxOffset: i32 = 0;
-        vkCmdDrawIndexed(command_buffer, idxData.len, 1, idxOffset, vtxOffset, 0);
+        const idx_count = idxData.len;
+        const idx_offset: i32 = 0;
+        const vtx_offset: i32 = 0;
+        vkCmdDrawIndexed(command_buffer, idxData.len, 1, idx_offset, vtx_offset, 0);
     }
 }
 
@@ -612,7 +607,7 @@ fn initTexture(ctx: *Context, texture: *Texture, width: u32, height: u32) !void 
             .pQueueFamilyIndices = null,
         };
         err = vkCreateImage(ctx.device, &info, ctx.vk_allocator, &texture.image);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         var req: VkMemoryRequirements = undefined;
         vkGetImageMemoryRequirements(ctx.device, texture.image, &req);
@@ -623,10 +618,10 @@ fn initTexture(ctx: *Context, texture: *Texture, width: u32, height: u32) !void 
             .memoryTypeIndex = getMemoryType(ctx, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, req.memoryTypeBits),
         };
         err = vkAllocateMemory(ctx.device, &alloc_info, ctx.vk_allocator, &texture.memory);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         err = vkBindImageMemory(ctx.device, texture.image, texture.memory, 0);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 
     // Create the image view:
@@ -648,7 +643,7 @@ fn initTexture(ctx: *Context, texture: *Texture, width: u32, height: u32) !void 
             },
         };
         err = vkCreateImageView(ctx.device, &info, ctx.vk_allocator, &texture.view);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 }
 
@@ -684,11 +679,11 @@ fn initTextureUpload(ctx: *Context, textureUpload: *TextureUpload, pixels: []con
             .pQueueFamilyIndices = null,
         };
         err = vkCreateBuffer(ctx.device, &buffer_info, ctx.vk_allocator, &textureUpload.buffer);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         var req: VkMemoryRequirements = undefined;
         vkGetBufferMemoryRequirements(ctx.device, textureUpload.buffer, &req);
-        ctx.bufferMemoryAlignment = if (ctx.bufferMemoryAlignment > req.alignment) ctx.bufferMemoryAlignment else req.alignment;
+        ctx.buffer_memory_alignment = if (ctx.buffer_memory_alignment > req.alignment) ctx.buffer_memory_alignment else req.alignment;
         const alloc_info = VkMemoryAllocateInfo{
             .sType = .VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
             .pNext = null,
@@ -696,17 +691,17 @@ fn initTextureUpload(ctx: *Context, textureUpload: *TextureUpload, pixels: []con
             .memoryTypeIndex = getMemoryType(ctx, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, req.memoryTypeBits),
         };
         err = vkAllocateMemory(ctx.device, &alloc_info, ctx.vk_allocator, &textureUpload.memory);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         err = vkBindBufferMemory(ctx.device, textureUpload.buffer, textureUpload.memory, offsetInMemory);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 
     // Upload to Buffer:
     {
         var map: [*]u8 = undefined;
         err = vkMapMemory(ctx.device, textureUpload.memory, offsetInMemory, pixels.len, 0, @ptrCast([*c]?*c_void, &map));
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         @memcpy(map, pixels.ptr, pixels.len);
         //std.mem.copy(u8, map[0..pixels.len], pixels); 2x slower in release-fast...  (performance restored if using noalias + no change with aligned ptrs)
@@ -721,7 +716,7 @@ fn initTextureUpload(ctx: *Context, textureUpload: *TextureUpload, pixels: []con
             },
         };
         err = vkFlushMappedMemoryRanges(ctx.device, ranges.len, &ranges);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         vkUnmapMemory(ctx.device, textureUpload.memory);
     }
@@ -808,7 +803,7 @@ fn createDeviceObjects(ctx: *Context) !void {
             .pCode = &__glsl_shader_vert_spv,
         };
         err = vkCreateShaderModule(ctx.device, &vert_info, ctx.vk_allocator, &vert_module);
-        try check_vk_result(err);
+        try checkVkResult(err);
         const frag_info = VkShaderModuleCreateInfo{
             .sType = .VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .pNext = null,
@@ -817,7 +812,7 @@ fn createDeviceObjects(ctx: *Context) !void {
             .pCode = &__glsl_shader_frag_spv,
         };
         err = vkCreateShaderModule(ctx.device, &frag_info, ctx.vk_allocator, &frag_module);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 
     // Create the image sampler:
@@ -842,12 +837,12 @@ fn createDeviceObjects(ctx: *Context) !void {
             .borderColor = .VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
             .unnormalizedCoordinates = 0,
         };
-        err = vkCreateSampler(ctx.device, &info, ctx.vk_allocator, &ctx.samplerTiling);
-        try check_vk_result(err);
+        err = vkCreateSampler(ctx.device, &info, ctx.vk_allocator, &ctx.tiling_sampler);
+        try checkVkResult(err);
     }
 
     {
-        const sampler = [_]VkSampler{ctx.samplerTiling};
+        const sampler = [_]VkSampler{ctx.tiling_sampler};
         const binding = [_]VkDescriptorSetLayoutBinding{
             VkDescriptorSetLayoutBinding{
                 .descriptorType = .VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -864,11 +859,11 @@ fn createDeviceObjects(ctx: *Context) !void {
             .bindingCount = binding.len,
             .pBindings = &binding,
         };
-        err = vkCreateDescriptorSetLayout(ctx.device, &info, ctx.vk_allocator, &ctx.descriptorSetLayout);
-        try check_vk_result(err);
+        err = vkCreateDescriptorSetLayout(ctx.device, &info, ctx.vk_allocator, &ctx.descriptor_set_layout);
+        try checkVkResult(err);
     }
 
-    if (ctx.pipelineLayout == null) {
+    if (ctx.pipeline_layout == null) {
         // Constants: we are using 'vec2 offset' and 'vec2 scale' instead of a full 3d projection matrix
         const push_constants = [_]VkPushConstantRange{
             VkPushConstantRange{
@@ -877,7 +872,7 @@ fn createDeviceObjects(ctx: *Context) !void {
                 .size = @sizeOf(f32) * 4,
             },
         };
-        const set_layout = [_]VkDescriptorSetLayout{ctx.descriptorSetLayout};
+        const set_layout = [_]VkDescriptorSetLayout{ctx.descriptor_set_layout};
         const layout_info = VkPipelineLayoutCreateInfo{
             .sType = .VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = null,
@@ -887,8 +882,8 @@ fn createDeviceObjects(ctx: *Context) !void {
             .pushConstantRangeCount = push_constants.len,
             .pPushConstantRanges = &push_constants,
         };
-        err = vkCreatePipelineLayout(ctx.device, &layout_info, ctx.vk_allocator, &ctx.pipelineLayout);
-        try check_vk_result(err);
+        err = vkCreatePipelineLayout(ctx.device, &layout_info, ctx.vk_allocator, &ctx.pipeline_layout);
+        try checkVkResult(err);
     }
 
     const stages = [_]VkPipelineShaderStageCreateInfo{
@@ -970,7 +965,7 @@ fn createDeviceObjects(ctx: *Context) !void {
         .sType = .VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .rasterizationSamples = if (@enumToInt(ctx.MSAASamples) != 0) ctx.MSAASamples else .VK_SAMPLE_COUNT_1_BIT,
+        .rasterizationSamples = if (@enumToInt(ctx.MSAA_samples) != 0) ctx.MSAA_samples else .VK_SAMPLE_COUNT_1_BIT,
         .sampleShadingEnable = 0,
         .minSampleShading = 0,
         .pSampleMask = 0,
@@ -1045,7 +1040,7 @@ fn createDeviceObjects(ctx: *Context) !void {
     const info = VkGraphicsPipelineCreateInfo{
         .sType = .VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = null,
-        .flags = ctx.pipelineCreateFlags,
+        .flags = ctx.pipeline_create_flags,
         .stageCount = stages.len,
         .pStages = &stages,
         .pVertexInputState = &vertex_info,
@@ -1056,45 +1051,41 @@ fn createDeviceObjects(ctx: *Context) !void {
         .pDepthStencilState = &depth_info,
         .pColorBlendState = &blend_info,
         .pDynamicState = &dynamic_state,
-        .layout = ctx.pipelineLayout,
-        .renderPass = ctx.mainWindowData.renderPass,
+        .layout = ctx.pipeline_layout,
+        .renderPass = ctx.main_window_data.render_pass,
         .pTessellationState = null,
         .subpass = 0,
         .basePipelineHandle = null,
         .basePipelineIndex = 0,
     };
-    err = vkCreateGraphicsPipelines(ctx.device, ctx.pipelineCache, 1, &info, ctx.vk_allocator, &ctx.pipeline);
-    try check_vk_result(err);
+    err = vkCreateGraphicsPipelines(ctx.device, ctx.pipeline_cache, 1, &info, ctx.vk_allocator, &ctx.pipeline);
+    try checkVkResult(err);
 
     vkDestroyShaderModule(ctx.device, vert_module, ctx.vk_allocator);
     vkDestroyShaderModule(ctx.device, frag_module, ctx.vk_allocator);
 }
 
 fn destroyDeviceObjects(ctx: *Context) void {
-    for (ctx.drawTextureUploads.items) |*texupload| {
+    for (ctx.draw_texture_uploads.items) |*texupload| {
         destroyTextureUpload(ctx.device, texupload, ctx.vk_allocator);
     }
-    ctx.drawTextureUploads.resize(0) catch unreachable;
+    ctx.draw_texture_uploads.resize(0) catch unreachable;
 
-    // for (ctx.texturePool.items) |*tex| {
-    //     destroyTexture(ctx.device, tex, ctx.vk_allocator);
-    // }
-    // ctx.texturePool.resize(0) catch unreachable;
-    ctx.drawQuads.resize(0) catch unreachable;
+    ctx.draw_quads.resize(0) catch unreachable;
 
-    destroyTexture(ctx.device, &ctx.fontTexture, ctx.vk_allocator);
+    destroyTexture(ctx.device, &ctx.font_texture, ctx.vk_allocator);
 
-    if (ctx.descriptorSetLayout != null) {
-        vkDestroyDescriptorSetLayout(ctx.device, ctx.descriptorSetLayout, ctx.vk_allocator);
-        ctx.descriptorSetLayout = null;
+    if (ctx.descriptor_set_layout != null) {
+        vkDestroyDescriptorSetLayout(ctx.device, ctx.descriptor_set_layout, ctx.vk_allocator);
+        ctx.descriptor_set_layout = null;
     }
-    if (ctx.samplerTiling != null) {
-        vkDestroySampler(ctx.device, ctx.samplerTiling, ctx.vk_allocator);
-        ctx.samplerTiling = null;
+    if (ctx.tiling_sampler != null) {
+        vkDestroySampler(ctx.device, ctx.tiling_sampler, ctx.vk_allocator);
+        ctx.tiling_sampler = null;
     }
-    if (ctx.pipelineLayout != null) {
-        vkDestroyPipelineLayout(ctx.device, ctx.pipelineLayout, ctx.vk_allocator);
-        ctx.pipelineLayout = null;
+    if (ctx.pipeline_layout != null) {
+        vkDestroyPipelineLayout(ctx.device, ctx.pipeline_layout, ctx.vk_allocator);
+        ctx.pipeline_layout = null;
     }
 
     if (ctx.pipeline != null) {
@@ -1106,22 +1097,22 @@ fn destroyDeviceObjects(ctx: *Context) void {
 //-------------------------------------------------------------------------
 
 export fn ImGui_ImplVulkan_Init(ctx: *Context) bool {
-    return _Init(ctx) catch |err| return false;
+    return imguiImplVulkanInit(ctx) catch |err| return false;
 }
-fn _Init(ctx: *Context) !bool {
+fn imguiImplVulkanInit(ctx: *Context) !bool {
     // Setup back-end capabilities flags
     const io: *c.ImGuiIO = c.igGetIO();
     io.BackendRendererName = "imgui_impl_vulkan";
     io.BackendFlags |= c.ImGuiBackendFlags_RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
     assert(ctx.instance != null);
-    assert(ctx.physicalDevice != null);
+    assert(ctx.physical_device != null);
     assert(ctx.device != null);
     assert(ctx.queue != null);
-    assert(ctx.descriptorPool != null);
-    assert(ctx.minImageCount >= 2);
-    assert(ctx.mainWindowData.frames.len >= ctx.minImageCount);
-    assert(ctx.mainWindowData.renderPass != null);
+    assert(ctx.descriptor_pool != null);
+    assert(ctx.min_image_count >= 2);
+    assert(ctx.main_window_data.frames.len >= ctx.min_image_count);
+    assert(ctx.main_window_data.render_pass != null);
 
     try createDeviceObjects(ctx);
 
@@ -1135,35 +1126,34 @@ fn _Init(ctx: *Context) !bool {
         assert(bpp == 4);
         const upload_size: usize = @intCast(usize, width * height * bpp) * @sizeOf(u8);
 
-        try initTexture(ctx, &ctx.fontTexture, @intCast(u32, width), @intCast(u32, height));
-        c.ImFontAtlas_SetTexID(io.Fonts, @ptrCast(c.ImTextureID, ctx.fontTexture.image));
+        try initTexture(ctx, &ctx.font_texture, @intCast(u32, width), @intCast(u32, height));
+        c.ImFontAtlas_SetTexID(io.Fonts, @ptrCast(c.ImTextureID, ctx.font_texture.image));
 
-        const texupload = try ctx.drawTextureUploads.addOne();
-        try initTextureUpload(ctx, texupload, pixels[0..upload_size], &ctx.fontTexture);
+        const texupload = try ctx.draw_texture_uploads.addOne();
+        try initTextureUpload(ctx, texupload, pixels[0..upload_size], &ctx.font_texture);
     }
 
     return true;
 }
 
 export fn ImGui_ImplVulkan_Shutdown(ctx: *Context) void {
-    _Shutdown(ctx) catch unreachable;
+    imguiImplVulkanShutdown(ctx) catch unreachable;
 }
-fn _Shutdown(ctx: *Context) !void {
+fn imguiImplVulkanShutdown(ctx: *Context) !void {
     var err: VkResult = undefined;
     err = vkDeviceWaitIdle(ctx.device);
-    try check_vk_result(err);
+    try checkVkResult(err);
 
     destroyDeviceObjects(ctx);
 }
 
 pub fn blitPixels(ctx: *Context, corners: [4]Vec2, pixels: []const u8, width: u32, height: u32) !void {
-    //const t = try ctx.texturePool.addOne();
     const t = try ctx.allocator.create(Texture);
     try initTexture(ctx, t, width, height);
-    const texupload = try ctx.drawTextureUploads.addOne();
+    const texupload = try ctx.draw_texture_uploads.addOne();
     try initTextureUpload(ctx, texupload, pixels, t);
 
-    const q = try ctx.drawQuads.addOne();
+    const q = try ctx.draw_quads.addOne();
     q.corners = corners;
     q.texture = t;
 }
@@ -1248,19 +1238,19 @@ fn createWindowCommandBuffers(physical_device: VkPhysicalDevice, device: VkDevic
                 .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
                 .queueFamilyIndex = queue_family,
             };
-            err = vkCreateCommandPool(device, &info, vk_allocator, &fd.commandPool);
-            try check_vk_result(err);
+            err = vkCreateCommandPool(device, &info, vk_allocator, &fd.command_pool);
+            try checkVkResult(err);
         }
         {
             const info = VkCommandBufferAllocateInfo{
                 .sType = .VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
                 .pNext = null,
-                .commandPool = fd.commandPool,
+                .commandPool = fd.command_pool,
                 .level = .VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                 .commandBufferCount = 1,
             };
-            err = vkAllocateCommandBuffers(device, &info, &fd.commandBuffer);
-            try check_vk_result(err);
+            err = vkAllocateCommandBuffers(device, &info, &fd.command_buffer);
+            try checkVkResult(err);
         }
         {
             const info = VkFenceCreateInfo{
@@ -1269,11 +1259,11 @@ fn createWindowCommandBuffers(physical_device: VkPhysicalDevice, device: VkDevic
                 .flags = VK_FENCE_CREATE_SIGNALED_BIT,
             };
             err = vkCreateFence(device, &info, vk_allocator, &fd.fence);
-            try check_vk_result(err);
+            try checkVkResult(err);
         }
     }
 
-    for (wd.frameSemaphores) |*fsd| {
+    for (wd.frame_semaphores) |*fsd| {
         {
             const info = VkSemaphoreCreateInfo{
                 .sType = .VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -1281,48 +1271,48 @@ fn createWindowCommandBuffers(physical_device: VkPhysicalDevice, device: VkDevic
                 .flags = 0,
             };
 
-            err = vkCreateSemaphore(device, &info, vk_allocator, &fsd.imageAcquiredSemaphore);
-            try check_vk_result(err);
-            err = vkCreateSemaphore(device, &info, vk_allocator, &fsd.renderCompleteSemaphore);
-            try check_vk_result(err);
+            err = vkCreateSemaphore(device, &info, vk_allocator, &fsd.image_acquired_semaphore);
+            try checkVkResult(err);
+            err = vkCreateSemaphore(device, &info, vk_allocator, &fsd.render_complete_semaphore);
+            try checkVkResult(err);
         }
     }
 }
 
 // Also destroy old swap chain and in-flight frames data, if any.
-fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd: *VulkanWindow, descriptorPool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks, w: u32, h: u32, min_image_count: u32) !void {
+fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd: *VulkanWindow, descriptor_pool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks, w: u32, h: u32, min_image_count: u32) !void {
     var err: VkResult = undefined;
     const old_swapchain = wd.swapchain;
     err = vkDeviceWaitIdle(device);
-    try check_vk_result(err);
+    try checkVkResult(err);
 
     // We don't use destroyWindow() because we want to preserve the old swapchain to create the new one.
     // Destroy old framebuffer
-    for (wd.frameSemaphores) |*frameSemaphore| {
+    for (wd.frame_semaphores) |*frameSemaphore| {
         destroySwapchainSemaphores(device, frameSemaphore, vk_allocator);
     }
     for (wd.frames) |*frame| {
         destroyFrame(device, frame, vk_allocator);
     }
-    for (wd.frameRenderData) |*frd| {
-        destroyFrameRenderData(device, frd, descriptorPool, vk_allocator);
+    for (wd.frame_render_data) |*frd| {
+        destroyFrameRenderData(device, frd, descriptor_pool, vk_allocator);
     }
-    allocator.free(wd.frameRenderData);
+    allocator.free(wd.frame_render_data);
     allocator.free(wd.frames);
-    allocator.free(wd.frameSemaphores);
+    allocator.free(wd.frame_semaphores);
     wd.frames = &[0]SwapchainFrame{};
-    wd.frameSemaphores = &[0]SwapchainSemaphores{};
-    wd.frameRenderData = &[0]FrameRenderData{};
-    if (wd.renderPass != null)
-        vkDestroyRenderPass(device, wd.renderPass, vk_allocator);
+    wd.frame_semaphores = &[0]SwapchainSemaphores{};
+    wd.frame_render_data = &[0]FrameRenderData{};
+    if (wd.render_pass != null)
+        vkDestroyRenderPass(device, wd.render_pass, vk_allocator);
 
     // If min image count was not specified, request different count of images dependent on selected present mode
     var image_count = min_image_count;
     if (image_count == 0) {
         image_count = mincount: {
-            if (wd.presentMode == .VK_PRESENT_MODE_MAILBOX_KHR) break :mincount 3;
-            if (wd.presentMode == .VK_PRESENT_MODE_FIFO_KHR or wd.presentMode == .VK_PRESENT_MODE_FIFO_RELAXED_KHR) break :mincount 2;
-            if (wd.presentMode == .VK_PRESENT_MODE_IMMEDIATE_KHR) break :mincount 1;
+            if (wd.present_mode == .VK_PRESENT_MODE_MAILBOX_KHR) break :mincount 3;
+            if (wd.present_mode == .VK_PRESENT_MODE_FIFO_KHR or wd.present_mode == .VK_PRESENT_MODE_FIFO_RELAXED_KHR) break :mincount 2;
+            if (wd.present_mode == .VK_PRESENT_MODE_IMMEDIATE_KHR) break :mincount 1;
             unreachable;
         };
     }
@@ -1333,7 +1323,7 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
     {
         var cap: VkSurfaceCapabilitiesKHR = undefined;
         err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, wd.surface, &cap);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         wd.width = if (cap.currentExtent.width == 0xffffffff) w else cap.currentExtent.width;
         wd.height = if (cap.currentExtent.height == 0xffffffff) h else cap.currentExtent.height;
@@ -1346,45 +1336,45 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             .pQueueFamilyIndices = null,
             .surface = wd.surface,
             .minImageCount = if (image_count < cap.minImageCount) cap.minImageCount else if (cap.maxImageCount != 0 and image_count > cap.maxImageCount) cap.maxImageCount else image_count,
-            .imageFormat = wd.surfaceFormat.format,
-            .imageColorSpace = wd.surfaceFormat.colorSpace,
+            .imageFormat = wd.surface_format.format,
+            .imageColorSpace = wd.surface_format.colorSpace,
             .imageArrayLayers = 1,
             .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .imageSharingMode = .VK_SHARING_MODE_EXCLUSIVE, // Assume that graphics family == present famil,
             .preTransform = .VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
             .compositeAlpha = .VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            .presentMode = wd.presentMode,
+            .presentMode = wd.present_mode,
             .clipped = VK_TRUE,
             .oldSwapchain = old_swapchain,
             .imageExtent = VkExtent2D{ .width = wd.width, .height = wd.height },
         };
 
         err = vkCreateSwapchainKHR(device, &info, vk_allocator, &wd.swapchain);
-        try check_vk_result(err);
+        try checkVkResult(err);
         err = vkGetSwapchainImagesKHR(device, wd.swapchain, &swapchainImageCount, null);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         assert(swapchainImageCount >= image_count);
         assert(swapchainImageCount < backbuffers.len);
         err = vkGetSwapchainImagesKHR(device, wd.swapchain, &swapchainImageCount, &backbuffers);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 
     {
-        assert(wd.frames.len == 0 and wd.frameSemaphores.len == 0 and wd.frameRenderData.len == 0);
+        assert(wd.frames.len == 0 and wd.frame_semaphores.len == 0 and wd.frame_render_data.len == 0);
         wd.frames = try allocator.alloc(SwapchainFrame, swapchainImageCount);
-        wd.frameSemaphores = try allocator.alloc(SwapchainSemaphores, swapchainImageCount);
-        std.mem.set(SwapchainSemaphores, wd.frameSemaphores, SwapchainSemaphores{});
+        wd.frame_semaphores = try allocator.alloc(SwapchainSemaphores, swapchainImageCount);
+        std.mem.set(SwapchainSemaphores, wd.frame_semaphores, SwapchainSemaphores{});
         for (wd.frames) |*frame, i| {
             frame.* = SwapchainFrame{ .backbuffer = backbuffers[i] };
         }
 
-        wd.renderDataIndex = 0;
-        wd.frameRenderData = try allocator.alloc(FrameRenderData, swapchainImageCount);
-        for (wd.frameRenderData) |*frd| {
+        wd.render_data_index = 0;
+        wd.frame_render_data = try allocator.alloc(FrameRenderData, swapchainImageCount);
+        for (wd.frame_render_data) |*frd| {
             frd.* = FrameRenderData{
-                .activeTextureUploads = ArrayList(TextureUpload).init(allocator),
-                .activeTranscientTexture = ArrayList(*Texture).init(allocator),
+                .active_transcient_texture = ArrayList(*Texture).init(allocator),
+                .active_texture_uploads = ArrayList(TextureUpload).init(allocator),
             };
         }
     }
@@ -1394,10 +1384,10 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
     // Create the Render Pass
     {
         const attachment = VkAttachmentDescription{
-            .format = wd.surfaceFormat.format,
+            .format = wd.surface_format.format,
             .flags = 0,
             .samples = .VK_SAMPLE_COUNT_1_BIT,
-            .loadOp = if (wd.clearEnable) .VK_ATTACHMENT_LOAD_OP_CLEAR else .VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .loadOp = if (wd.clear_enable) .VK_ATTACHMENT_LOAD_OP_CLEAR else .VK_ATTACHMENT_LOAD_OP_DONT_CARE,
             .storeOp = .VK_ATTACHMENT_STORE_OP_STORE,
             .stencilLoadOp = .VK_ATTACHMENT_LOAD_OP_DONT_CARE,
             .stencilStoreOp = .VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -1440,8 +1430,8 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             .dependencyCount = 1,
             .pDependencies = &dependency,
         };
-        err = vkCreateRenderPass(device, &info, vk_allocator, &wd.renderPass);
-        try check_vk_result(err);
+        err = vkCreateRenderPass(device, &info, vk_allocator, &wd.render_pass);
+        try checkVkResult(err);
     }
 
     // Create The image Views
@@ -1451,15 +1441,15 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             .pNext = null,
             .flags = 0,
             .viewType = .VK_IMAGE_VIEW_TYPE_2D,
-            .format = wd.surfaceFormat.format,
+            .format = wd.surface_format.format,
             .components = VkComponentMapping{ .r = .VK_COMPONENT_SWIZZLE_R, .g = .VK_COMPONENT_SWIZZLE_G, .b = .VK_COMPONENT_SWIZZLE_B, .a = .VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = VkImageSubresourceRange{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1 },
             .image = undefined,
         };
         for (wd.frames) |*fd| {
             info.image = fd.backbuffer;
-            err = vkCreateImageView(device, &info, vk_allocator, &fd.backbufferView);
-            try check_vk_result(err);
+            err = vkCreateImageView(device, &info, vk_allocator, &fd.backbuffer_view);
+            try checkVkResult(err);
         }
     }
 
@@ -1470,7 +1460,7 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             .sType = .VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .pNext = null,
             .flags = 0,
-            .renderPass = wd.renderPass,
+            .renderPass = wd.render_pass,
             .attachmentCount = attachment.len,
             .pAttachments = &attachment,
             .width = wd.width,
@@ -1478,98 +1468,98 @@ fn createWindowSwapChain(physical_device: VkPhysicalDevice, device: VkDevice, wd
             .layers = 1,
         };
         for (wd.frames) |*fd| {
-            attachment[0] = fd.backbufferView;
+            attachment[0] = fd.backbuffer_view;
             err = vkCreateFramebuffer(device, &info, vk_allocator, &fd.framebuffer);
-            try check_vk_result(err);
+            try checkVkResult(err);
         }
     }
 }
 
-fn createWindow(instance: VkInstance, physical_device: VkPhysicalDevice, device: VkDevice, wd: *VulkanWindow, queue_family: u32, descriptorPool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks, width: u32, height: u32, min_image_count: u32) !void {
-    try createWindowSwapChain(physical_device, device, wd, descriptorPool, allocator, vk_allocator, width, height, min_image_count);
+fn createWindow(instance: VkInstance, physical_device: VkPhysicalDevice, device: VkDevice, wd: *VulkanWindow, queue_family: u32, descriptor_pool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks, width: u32, height: u32, min_image_count: u32) !void {
+    try createWindowSwapChain(physical_device, device, wd, descriptor_pool, allocator, vk_allocator, width, height, min_image_count);
     try createWindowCommandBuffers(physical_device, device, wd, queue_family, vk_allocator);
 }
 
-fn destroyWindow(instance: VkInstance, device: VkDevice, wd: *VulkanWindow, descriptorPool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks) void {
+fn destroyWindow(instance: VkInstance, device: VkDevice, wd: *VulkanWindow, descriptor_pool: VkDescriptorPool, allocator: *Allocator, vk_allocator: ?*const VkAllocationCallbacks) void {
     var err: VkResult = undefined;
     err = vkDeviceWaitIdle(device); // FIXME: We could wait on the queue if we had the queue in wd. (otherwise VulkanH functions can't use globals)
     //vkQueueWaitIdle(g_Queue);
 
-    for (wd.frameRenderData) |*frd| {
-        destroyFrameRenderData(device, frd, descriptorPool, vk_allocator);
+    for (wd.frame_render_data) |*frd| {
+        destroyFrameRenderData(device, frd, descriptor_pool, vk_allocator);
     }
-    for (wd.frameSemaphores) |*frameSemaphore| {
+    for (wd.frame_semaphores) |*frameSemaphore| {
         destroySwapchainSemaphores(device, frameSemaphore, vk_allocator);
     }
     for (wd.frames) |*frame| {
         destroyFrame(device, frame, vk_allocator);
     }
-    allocator.free(wd.frameRenderData);
+    allocator.free(wd.frame_render_data);
     allocator.free(wd.frames);
-    allocator.free(wd.frameSemaphores);
+    allocator.free(wd.frame_semaphores);
     wd.frames = &[0]SwapchainFrame{};
-    wd.frameSemaphores = &[0]SwapchainSemaphores{};
-    wd.frameRenderData = &[0]FrameRenderData{};
+    wd.frame_semaphores = &[0]SwapchainSemaphores{};
+    wd.frame_render_data = &[0]FrameRenderData{};
 
-    vkDestroyRenderPass(device, wd.renderPass, vk_allocator);
+    vkDestroyRenderPass(device, wd.render_pass, vk_allocator);
     vkDestroySwapchainKHR(device, wd.swapchain, vk_allocator);
     vkDestroySurfaceKHR(instance, wd.surface, vk_allocator);
 }
 
 fn destroyFrame(device: VkDevice, fd: *SwapchainFrame, vk_allocator: ?*const VkAllocationCallbacks) void {
     vkDestroyFence(device, fd.fence, vk_allocator);
-    vkFreeCommandBuffers(device, fd.commandPool, 1, &fd.commandBuffer);
-    vkDestroyCommandPool(device, fd.commandPool, vk_allocator);
+    vkFreeCommandBuffers(device, fd.command_pool, 1, &fd.command_buffer);
+    vkDestroyCommandPool(device, fd.command_pool, vk_allocator);
     fd.fence = null;
-    fd.commandBuffer = null;
-    fd.commandPool = null;
+    fd.command_buffer = null;
+    fd.command_pool = null;
 
-    vkDestroyImageView(device, fd.backbufferView, vk_allocator);
+    vkDestroyImageView(device, fd.backbuffer_view, vk_allocator);
     vkDestroyFramebuffer(device, fd.framebuffer, vk_allocator);
 }
 
 fn destroySwapchainSemaphores(device: VkDevice, fsd: *SwapchainSemaphores, vk_allocator: ?*const VkAllocationCallbacks) void {
-    vkDestroySemaphore(device, fsd.imageAcquiredSemaphore, vk_allocator);
-    vkDestroySemaphore(device, fsd.renderCompleteSemaphore, vk_allocator);
-    fsd.imageAcquiredSemaphore = null;
-    fsd.renderCompleteSemaphore = null;
+    vkDestroySemaphore(device, fsd.image_acquired_semaphore, vk_allocator);
+    vkDestroySemaphore(device, fsd.render_complete_semaphore, vk_allocator);
+    fsd.image_acquired_semaphore = null;
+    fsd.render_complete_semaphore = null;
 }
 
-fn destroyFrameRenderData(device: VkDevice, frd: *FrameRenderData, descriptorPool: VkDescriptorPool, vk_allocator: ?*const VkAllocationCallbacks) void {
+fn destroyFrameRenderData(device: VkDevice, frd: *FrameRenderData, descriptor_pool: VkDescriptorPool, vk_allocator: ?*const VkAllocationCallbacks) void {
     for (frd.data) |*data| {
-        if (data.descriptorSet != null) {
-            _ = vkFreeDescriptorSets(device, descriptorPool, 1, &data.descriptorSet);
-            data.descriptorSet = null;
+        if (data.descriptor_set != null) {
+            _ = vkFreeDescriptorSets(device, descriptor_pool, 1, &data.descriptor_set);
+            data.descriptor_set = null;
         }
         if (data.vertex != null) {
             vkDestroyBuffer(device, data.vertex, vk_allocator);
             data.vertex = null;
         }
-        if (data.vertexMemory != null) {
-            vkFreeMemory(device, data.vertexMemory, vk_allocator);
-            data.vertexMemory = null;
+        if (data.vertex_memory != null) {
+            vkFreeMemory(device, data.vertex_memory, vk_allocator);
+            data.vertex_memory = null;
         }
         if (data.index != null) {
             vkDestroyBuffer(device, data.index, vk_allocator);
             data.index = null;
         }
-        if (data.indexMemory != null) {
-            vkFreeMemory(device, data.indexMemory, vk_allocator);
-            data.indexMemory = null;
+        if (data.index_memory != null) {
+            vkFreeMemory(device, data.index_memory, vk_allocator);
+            data.index_memory = null;
         }
-        data.vertexSize = 0;
-        data.indexSize = 0;
+        data.vertex_size = 0;
+        data.index_size = 0;
     }
 
-    for (frd.activeTextureUploads.items) |*texupload| {
+    for (frd.active_texture_uploads.items) |*texupload| {
         destroyTextureUpload(device, texupload, vk_allocator);
     }
-    frd.activeTextureUploads.deinit();
+    frd.active_texture_uploads.deinit();
 
-    for (frd.activeTranscientTexture.items) |tex| {
+    for (frd.active_transcient_texture.items) |tex| {
         destroyTexture(device, tex, vk_allocator);
     }
-    frd.activeTranscientTexture.deinit();
+    frd.active_transcient_texture.deinit();
 }
 
 //---------------------------------
@@ -1584,9 +1574,8 @@ pub fn init(title: [*:0]const u8, width: c_int, height: c_int, allocator: *Alloc
     errdefer allocator.destroy(ctx);
     ctx.* = Context{
         .allocator = allocator,
-        .drawTextureUploads = ArrayList(TextureUpload).init(allocator),
-        // .texturePool = ArrayList(Texture).init(allocator),
-        .drawQuads = ArrayList(Quad).init(allocator),
+        .draw_texture_uploads = ArrayList(TextureUpload).init(allocator),
+        .draw_quads = ArrayList(Quad).init(allocator),
     };
 
     const ok = imguiImpl_Init(title, width, height, ctx);
@@ -1598,9 +1587,8 @@ pub fn init(title: [*:0]const u8, width: c_int, height: c_int, allocator: *Alloc
 
 pub fn destroy(ctx: *Context) void {
     imguiImpl_Destroy(ctx);
-    ctx.drawTextureUploads.deinit();
-    //ctx.texturePool.deinit();
-    ctx.drawQuads.deinit();
+    ctx.draw_texture_uploads.deinit();
+    ctx.draw_quads.deinit();
 
     ctx.allocator.destroy(ctx);
 }
@@ -1612,39 +1600,28 @@ pub fn beginFrame(ctx: *Context) void {
     c.igNewFrame();
 }
 
-fn findInSlice(comptime T: type, slice: []const T, ptr: *const T) usize {
-    // return ptr - slice.ptr;
-    const start = @ptrToInt(slice.ptr);
-    const elem = @ptrToInt(ptr);
-    assert(elem >= start);
-    const offset = elem - start;
-    const i = offset / @sizeOf(T);
-    assert(i < slice.len);
-    return i;
-}
-
 fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
     const u64max = std.math.maxInt(u64);
 
-    const image_acquired_semaphore = wd.frameSemaphores[wd.semaphoreIndex].imageAcquiredSemaphore;
-    const render_complete_semaphore = wd.frameSemaphores[wd.semaphoreIndex].renderCompleteSemaphore;
-    var err = vkAcquireNextImageKHR(ctx.device, wd.swapchain, u64max, image_acquired_semaphore, null, &wd.frameIndex);
+    const image_acquired_semaphore = wd.frame_semaphores[wd.semaphore_index].image_acquired_semaphore;
+    const render_complete_semaphore = wd.frame_semaphores[wd.semaphore_index].render_complete_semaphore;
+    var err = vkAcquireNextImageKHR(ctx.device, wd.swapchain, u64max, image_acquired_semaphore, null, &wd.frame_index);
     if (err == .VK_ERROR_OUT_OF_DATE_KHR or err == .VK_SUBOPTIMAL_KHR) {
         return error.SwapchainOutOfDate;
     }
-    try check_vk_result(err);
+    try checkVkResult(err);
 
-    const fd = &wd.frames[wd.frameIndex];
+    const fd = &wd.frames[wd.frame_index];
     {
         err = vkWaitForFences(ctx.device, 1, &fd.fence, VK_TRUE, u64max); // wait indefinitely instead of periodically checking
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         err = vkResetFences(ctx.device, 1, &fd.fence);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
     {
-        err = vkResetCommandPool(ctx.device, fd.commandPool, 0);
-        try check_vk_result(err);
+        err = vkResetCommandPool(ctx.device, fd.command_pool, 0);
+        try checkVkResult(err);
 
         const info = VkCommandBufferBeginInfo{
             .pNext = null,
@@ -1652,46 +1629,44 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
             .sType = .VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
         };
-        err = vkBeginCommandBuffer(fd.commandBuffer, &info);
-        try check_vk_result(err);
+        err = vkBeginCommandBuffer(fd.command_buffer, &info);
+        try checkVkResult(err);
     }
 
-    wd.renderDataIndex = @intCast(u32, (wd.renderDataIndex + 1) % wd.frameRenderData.len);
-    const frd = &wd.frameRenderData[wd.renderDataIndex];
+    wd.render_data_index = @intCast(u32, (wd.render_data_index + 1) % wd.frame_render_data.len);
+    const frd = &wd.frame_render_data[wd.render_data_index];
 
     // clean previous texture uploads form the previousb use of frd + flush new ones
     {
-        for (frd.activeTextureUploads.items) |*texupload| {
+        for (frd.active_texture_uploads.items) |*texupload| {
             destroyTextureUpload(ctx.device, texupload, ctx.vk_allocator);
         }
-        frd.activeTextureUploads.resize(0) catch unreachable;
+        frd.active_texture_uploads.resize(0) catch unreachable;
 
-        for (frd.activeTranscientTexture.items) |t| {
+        for (frd.active_transcient_texture.items) |t| {
             destroyTexture(ctx.device, t, ctx.vk_allocator);
-            //const i = findInSlice(Texture, ctx.texturePool.toSliceConst(), t);
-            //_ = ctx.texturePool.swapRemove(i);
             ctx.allocator.destroy(t);
         }
-        frd.activeTranscientTexture.resize(0) catch unreachable;
+        frd.active_transcient_texture.resize(0) catch unreachable;
 
-        for (ctx.drawTextureUploads.items) |*texupload| {
-            flushTextureUpload(ctx, fd.commandBuffer, texupload);
-            try frd.activeTextureUploads.append(texupload.*);
+        for (ctx.draw_texture_uploads.items) |*texupload| {
+            flushTextureUpload(ctx, fd.command_buffer, texupload);
+            try frd.active_texture_uploads.append(texupload.*);
         }
-        ctx.drawTextureUploads.resize(0) catch unreachable;
+        ctx.draw_texture_uploads.resize(0) catch unreachable;
     }
 
     {
         const info = VkRenderPassBeginInfo{
             .pNext = null,
             .sType = .VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .renderPass = wd.renderPass,
+            .renderPass = wd.render_pass,
             .framebuffer = fd.framebuffer,
             .renderArea = VkRect2D{ .offset = VkOffset2D{ .x = 0, .y = 0 }, .extent = VkExtent2D{ .width = wd.width, .height = wd.height } },
             .clearValueCount = 1,
-            .pClearValues = &wd.clearValue,
+            .pClearValues = &wd.clear_value,
         };
-        vkCmdBeginRenderPass(fd.commandBuffer, &info, .VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(fd.command_buffer, &info, .VK_SUBPASS_CONTENTS_INLINE);
     }
 
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
@@ -1713,24 +1688,24 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
             .fb_height = wd.height,
         };
 
-        for (ctx.drawQuads.items) |quad| {
-            try renderQuad(ctx, frd, displayTransfo, quad, fd.commandBuffer);
+        for (ctx.draw_quads.items) |quad| {
+            try renderQuad(ctx, &frd.data[1], displayTransfo, quad, fd.command_buffer);
         }
-        try renderDrawData(ctx, frd, displayTransfo, draw_data, fd.commandBuffer);
+        try renderDrawData(ctx, frd, displayTransfo, draw_data, fd.command_buffer);
     }
 
-    vkCmdEndRenderPass(fd.commandBuffer);
+    vkCmdEndRenderPass(fd.command_buffer);
 
     {
-        for (ctx.drawQuads.items) |*quad| {
-            try frd.activeTranscientTexture.append(quad.texture);
+        for (ctx.draw_quads.items) |*quad| {
+            try frd.active_transcient_texture.append(quad.texture);
         }
-        ctx.drawQuads.resize(0) catch unreachable;
+        ctx.draw_quads.resize(0) catch unreachable;
     }
 
     {
-        err = vkEndCommandBuffer(fd.commandBuffer);
-        try check_vk_result(err);
+        err = vkEndCommandBuffer(fd.command_buffer);
+        try checkVkResult(err);
 
         const wait_stage = [_]u32{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         const info = VkSubmitInfo{
@@ -1740,17 +1715,17 @@ fn frameRender(ctx: *Context, wd: *VulkanWindow) !void {
             .pWaitSemaphores = &image_acquired_semaphore,
             .pWaitDstStageMask = &wait_stage,
             .commandBufferCount = 1,
-            .pCommandBuffers = &fd.commandBuffer,
+            .pCommandBuffers = &fd.command_buffer,
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = &render_complete_semaphore,
         };
         err = vkQueueSubmit(ctx.queue, 1, &info, fd.fence);
-        try check_vk_result(err);
+        try checkVkResult(err);
     }
 }
 
 fn framePresent(queue: VkQueue, wd: *VulkanWindow) !void {
-    var render_complete_semaphore = wd.frameSemaphores[wd.semaphoreIndex].renderCompleteSemaphore;
+    var render_complete_semaphore = wd.frame_semaphores[wd.semaphore_index].render_complete_semaphore;
     const info = VkPresentInfoKHR{
         .pNext = null,
         .pResults = null,
@@ -1759,23 +1734,24 @@ fn framePresent(queue: VkQueue, wd: *VulkanWindow) !void {
         .pWaitSemaphores = &render_complete_semaphore,
         .swapchainCount = 1,
         .pSwapchains = &wd.swapchain,
-        .pImageIndices = &wd.frameIndex,
+        .pImageIndices = &wd.frame_index,
     };
     var err = vkQueuePresentKHR(queue, &info);
     if (err == .VK_ERROR_OUT_OF_DATE_KHR or err == .VK_SUBOPTIMAL_KHR)
         return error.SwapchainOutOfDate;
-    try check_vk_result(err);
+    try checkVkResult(err);
 
-    wd.semaphoreIndex = (wd.semaphoreIndex + 1) % @intCast(u32, wd.frameSemaphores.len); // Now we can use the next set of semaphores
+    wd.semaphore_index = (wd.semaphore_index + 1) % @intCast(u32, wd.frame_semaphores.len); // Now we can use the next set of semaphores
 }
 
 fn frameRebuildSwapchain(ctx: *Context) !void {
     var w: u32 = undefined;
     var h: u32 = undefined;
     getWindowSize(ctx, &w, &h);
+    assert(w > 0 and h > 0); // assert == draw_data.DisplaySize
 
-    try createWindow(ctx.instance, ctx.physicalDevice, ctx.device, &ctx.mainWindowData, ctx.queueFamily, ctx.descriptorPool, ctx.allocator, ctx.vk_allocator, w, h, ctx.minImageCount);
-    ctx.mainWindowData.frameIndex = 0;
+    try createWindow(ctx.instance, ctx.physical_device, ctx.device, &ctx.main_window_data, ctx.queue_family, ctx.descriptor_pool, ctx.allocator, ctx.vk_allocator, w, h, ctx.min_image_count);
+    ctx.main_window_data.frame_index = 0;
 }
 
 pub fn endFrame(ctx: *Context) !void {
@@ -1783,7 +1759,7 @@ pub fn endFrame(ctx: *Context) !void {
 
     var swapchain_ok = true;
     while (true) {
-        frameRender(ctx, &ctx.mainWindowData) catch |err| switch (err) {
+        frameRender(ctx, &ctx.main_window_data) catch |err| switch (err) {
             error.SwapchainOutOfDate => {
                 try frameRebuildSwapchain(ctx);
                 continue;
@@ -1792,7 +1768,7 @@ pub fn endFrame(ctx: *Context) !void {
             error.OutOfMemory => return error.OutOfMemory,
         };
 
-        framePresent(ctx.queue, &ctx.mainWindowData) catch |err| switch (err) {
+        framePresent(ctx.queue, &ctx.main_window_data) catch |err| switch (err) {
             error.SwapchainOutOfDate => {
                 try frameRebuildSwapchain(ctx);
                 continue;
@@ -1800,21 +1776,21 @@ pub fn endFrame(ctx: *Context) !void {
             error.VulkanError => return error.VulkanError,
         };
 
-        return; // success
+        break; // success
     }
 }
 
 // -------------------------------------------------------------------------------------------
 
-pub export fn debug_report(flags: VkDebugReportFlagsEXT, objectType: VkDebugReportObjectTypeEXT, object: u64, location: usize, messageCode: i32, pLayerPrefix: [*c]const u8, pMessage: [*c]const u8, pUserData: ?*c_void) u32 {
+export fn debug_report(flags: VkDebugReportFlagsEXT, objectType: VkDebugReportObjectTypeEXT, object: u64, location: usize, messageCode: i32, pLayerPrefix: [*c]const u8, pMessage: [*c]const u8, pUserData: ?*c_void) u32 {
     warn("[vulkan] ObjectType: {}\nMessage: {s}\n\n", .{ objectType, pMessage });
     return 0;
 }
 
 pub export fn Viewport_SetupVulkan(ctx: *Context, extensions: [*][*]const u8, extensions_count: u32) VkInstance {
-    return _SetupVulkan(ctx, extensions[0..extensions_count]) catch unreachable;
+    return setupVulkan(ctx, extensions[0..extensions_count]) catch unreachable;
 }
-fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
+fn setupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
     var err: VkResult = undefined;
 
     // Create Vulkan instance
@@ -1842,7 +1818,7 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
 
             // Create Vulkan instance
             err = vkCreateInstance(&create_info, ctx.vk_allocator, &ctx.instance);
-            try check_vk_result(err);
+            try checkVkResult(err);
 
             // Get the function pointer (required for any extensions)
             const _vkCreateDebugReportCallbackEXT = @ptrCast(PFN_vkCreateDebugReportCallbackEXT, vkGetInstanceProcAddr(ctx.instance, "vkCreateDebugReportCallbackEXT"));
@@ -1855,8 +1831,8 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
                 .pfnCallback = debug_report,
                 .pUserData = null,
             };
-            err = _vkCreateDebugReportCallbackEXT.?(ctx.instance, &debug_report_ci, ctx.vk_allocator, &ctx.debugReport);
-            try check_vk_result(err);
+            err = _vkCreateDebugReportCallbackEXT.?(ctx.instance, &debug_report_ci, ctx.vk_allocator, &ctx.debug_report);
+            try checkVkResult(err);
 
             warn("Vulkan: debug layers enabled\n", .{});
         } else {
@@ -1864,15 +1840,15 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
                 .sType = .VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
                 .pNext = null,
                 .flags = 0,
-                .enabledExtensionCount = extensions_count,
-                .ppEnabledExtensionNames = extensions,
+                .enabledExtensionCount = @intCast(u32, extensions.len),
+                .ppEnabledExtensionNames = extensions.ptr,
                 .enabledLayerCount = 0,
                 .ppEnabledLayerNames = null,
                 .pApplicationInfo = null,
             };
             // Create Vulkan instance without any debug feature
             err = vkCreateInstance(&create_info, ctx.vk_allocator, &ctx.instance);
-            try check_vk_result(err);
+            try checkVkResult(err);
         }
     }
 
@@ -1880,32 +1856,32 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
     {
         var gpu_count: u32 = undefined;
         err = vkEnumeratePhysicalDevices(ctx.instance, &gpu_count, null);
-        try check_vk_result(err);
+        try checkVkResult(err);
         assert(gpu_count > 0);
         var gpus: [100]VkPhysicalDevice = undefined;
         err = vkEnumeratePhysicalDevices(ctx.instance, &gpu_count, &gpus);
-        try check_vk_result(err);
+        try checkVkResult(err);
 
         // If a number >1 of GPUs got reported, you should find the best fit GPU for your purpose
         // e.g. VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU if available, or with the greatest memory available, etc.
         // for sake of simplicity we'll just take the first one, assuming it has a graphics queue family.
-        ctx.physicalDevice = gpus[0];
+        ctx.physical_device = gpus[0];
     }
 
     // Select graphics queue family
     {
         var count: u32 = undefined;
-        vkGetPhysicalDeviceQueueFamilyProperties(ctx.physicalDevice, &count, null);
+        vkGetPhysicalDeviceQueueFamilyProperties(ctx.physical_device, &count, null);
         var queues: [100]VkQueueFamilyProperties = undefined;
-        vkGetPhysicalDeviceQueueFamilyProperties(ctx.physicalDevice, &count, &queues);
+        vkGetPhysicalDeviceQueueFamilyProperties(ctx.physical_device, &count, &queues);
         var i: u32 = 0;
         while (i < count) : (i += 1) {
             if (queues[i].queueFlags & @intCast(u32, VK_QUEUE_GRAPHICS_BIT) != 0) {
-                ctx.queueFamily = i;
+                ctx.queue_family = i;
                 break;
             }
         }
-        assert(ctx.queueFamily != 0xFFFFFFFF);
+        assert(ctx.queue_family != 0xFFFFFFFF);
     }
 
     // Create Logical device (with 1 queue)
@@ -1917,7 +1893,7 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
                 .sType = .VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                 .pNext = null,
                 .flags = 0,
-                .queueFamilyIndex = ctx.queueFamily,
+                .queueFamilyIndex = ctx.queue_family,
                 .queueCount = 1,
                 .pQueuePriorities = &queue_priority,
             },
@@ -1934,9 +1910,9 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
             .ppEnabledLayerNames = null,
             .pEnabledFeatures = null,
         };
-        err = vkCreateDevice(ctx.physicalDevice, &create_info, ctx.vk_allocator, &ctx.device);
-        try check_vk_result(err);
-        vkGetDeviceQueue(ctx.device, ctx.queueFamily, 0, &ctx.queue);
+        err = vkCreateDevice(ctx.physical_device, &create_info, ctx.vk_allocator, &ctx.device);
+        try checkVkResult(err);
+        vkGetDeviceQueue(ctx.device, ctx.queue_family, 0, &ctx.queue);
     }
 
     // Create Descriptor Pool
@@ -1962,20 +1938,20 @@ fn _SetupVulkan(ctx: *Context, extensions: [][*]const u8) !VkInstance {
             .poolSizeCount = pool_sizes.len,
             .pPoolSizes = &pool_sizes,
         };
-        err = vkCreateDescriptorPool(ctx.device, &pool_info, ctx.vk_allocator, &ctx.descriptorPool);
-        try check_vk_result(err);
+        err = vkCreateDescriptorPool(ctx.device, &pool_info, ctx.vk_allocator, &ctx.descriptor_pool);
+        try checkVkResult(err);
     }
 
     return ctx.instance;
 }
 
 pub export fn Viewport_CleanupVulkan(ctx: *Context) void {
-    vkDestroyDescriptorPool(ctx.device, ctx.descriptorPool, ctx.vk_allocator);
+    vkDestroyDescriptorPool(ctx.device, ctx.descriptor_pool, ctx.vk_allocator);
 
     if (DVULKAN_DEBUG_REPORT) {
         // Remove the debug report callback
         const _vkDestroyDebugReportCallbackEXT = @ptrCast(PFN_vkDestroyDebugReportCallbackEXT, vkGetInstanceProcAddr(ctx.instance, "vkDestroyDebugReportCallbackEXT"));
-        _vkDestroyDebugReportCallbackEXT.?(ctx.instance, ctx.debugReport, ctx.vk_allocator);
+        _vkDestroyDebugReportCallbackEXT.?(ctx.instance, ctx.debug_report, ctx.vk_allocator);
     }
 
     vkDestroyDevice(ctx.device, ctx.vk_allocator);
@@ -1983,21 +1959,21 @@ pub export fn Viewport_CleanupVulkan(ctx: *Context) void {
 }
 
 pub export fn Viewport_SetupWindow(ctx: *Context, surface: VkSurfaceKHR, width: u32, height: u32, ms: VkSampleCountFlagBits, min_image_count: u32, clear_enable: bool) void {
-    _SetupWindow(ctx, surface, width, height, ms, min_image_count, clear_enable) catch unreachable;
+    setupWindow(ctx, surface, width, height, ms, min_image_count, clear_enable) catch unreachable;
 }
-fn _SetupWindow(ctx: *Context, surface: VkSurfaceKHR, width: u32, height: u32, ms: VkSampleCountFlagBits, min_image_count: u32, clear_enable: bool) !void {
+fn setupWindow(ctx: *Context, surface: VkSurfaceKHR, width: u32, height: u32, ms: VkSampleCountFlagBits, min_image_count: u32, clear_enable: bool) !void {
     var err: VkResult = undefined;
 
-    ctx.MSAASamples = ms;
+    ctx.MSAA_samples = ms;
 
-    const wd = &ctx.mainWindowData;
+    const wd = &ctx.main_window_data;
     wd.surface = surface;
-    wd.clearEnable = clear_enable;
+    wd.clear_enable = clear_enable;
 
     // Check for WSI support
     var res: u32 = undefined;
-    err = vkGetPhysicalDeviceSurfaceSupportKHR(ctx.physicalDevice, ctx.queueFamily, wd.surface, &res);
-    try check_vk_result(err);
+    err = vkGetPhysicalDeviceSurfaceSupportKHR(ctx.physical_device, ctx.queue_family, wd.surface, &res);
+    try checkVkResult(err);
     if (res == 0) {
         warn("Error no WSI support on physical device 0\n", .{});
         unreachable;
@@ -2005,17 +1981,17 @@ fn _SetupWindow(ctx: *Context, surface: VkSurfaceKHR, width: u32, height: u32, m
 
     // Select surface Format
     const requestSurfaceImageFormat = [_]VkFormat{ .VK_FORMAT_B8G8R8A8_UNORM, .VK_FORMAT_R8G8B8A8_UNORM, .VK_FORMAT_B8G8R8_UNORM, .VK_FORMAT_R8G8B8_UNORM };
-    wd.surfaceFormat = selectSurfaceFormat(ctx.physicalDevice, wd.surface, &requestSurfaceImageFormat, .VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
+    wd.surface_format = selectSurfaceFormat(ctx.physical_device, wd.surface, &requestSurfaceImageFormat, .VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
 
     // Select Present Mode
     //const present_modes = [_]VkPresentModeKHR{ .VK_PRESENT_MODE_MAILBOX_KHR, .VK_PRESENT_MODE_IMMEDIATE_KHR, .VK_PRESENT_MODE_FIFO_KHR };
     const present_modes = [_]VkPresentModeKHR{.VK_PRESENT_MODE_FIFO_KHR}; //v-sync
-    wd.presentMode = selectPresentMode(ctx.physicalDevice, wd.surface, &present_modes);
+    wd.present_mode = selectPresentMode(ctx.physical_device, wd.surface, &present_modes);
 
     // Create SwapChain, renderPass, framebuffer, etc.
-    try createWindow(ctx.instance, ctx.physicalDevice, ctx.device, wd, ctx.queueFamily, ctx.descriptorPool, ctx.allocator, ctx.vk_allocator, width, height, min_image_count);
+    try createWindow(ctx.instance, ctx.physical_device, ctx.device, wd, ctx.queue_family, ctx.descriptor_pool, ctx.allocator, ctx.vk_allocator, width, height, min_image_count);
 }
 
 pub export fn Viewport_CleanupWindow(ctx: *Context) void {
-    destroyWindow(ctx.instance, ctx.device, &ctx.mainWindowData, ctx.descriptorPool, ctx.allocator, ctx.vk_allocator);
+    destroyWindow(ctx.instance, ctx.device, &ctx.main_window_data, ctx.descriptor_pool, ctx.allocator, ctx.vk_allocator);
 }
