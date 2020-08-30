@@ -12,9 +12,9 @@ const Vector = std.meta.Vector;
 usingnamespace @cImport({
     @cDefine("SDL_MAIN_HANDLED", "1");
     @cInclude("SDL2/SDL.h");
-
-    @cInclude("imgui_impl_sdl.h");
 });
+
+extern fn ImGui_ImplSDL2_ProcessEvent(event: *const SDL_Event) bool;
 
 // work-arounds:
 //pub const SDL_TOUCH_MOUSEID = Uint32 - 1;  -> "error: integer value 1 cannot be coerced to type 'type'""
@@ -311,11 +311,7 @@ pub fn main() !void {
 
             {
                 var storage: [100]u8 = undefined;
-                const txt = try std.fmt.bufPrint(&storage, "Status: {}", .{@tagName(mandel_compute_state.status)});
-                assert(txt.ptr == &storage);
-                storage[txt.len] = 0;
-                const txtZ = storage[0..txt.len :0];
-                Imgui.Text(txtZ);
+                Imgui.Text(tagNameZ(mandel_compute_state.status, &storage));
             }
 
             if (mandel_compute_state.status == .idle and (mandel_compute_state.done_timestamp_ms > mandel_compute_state.previewed_timestamp_ms) and (mandel_compute_state.previewed_timestamp_ms > mandel_compute_state.changed_timestamp_ms)) {

@@ -26,7 +26,7 @@ pub fn build(b: *Builder) void {
 
     exe.addIncludeDir("src/");
     exe.addIncludeDir("deps/imgui/");
-    exe.addCSourceFile("deps/imgui/cimgui.cpp", &[_][]const u8{}); // "-D_DEBUG"
+    exe.addCSourceFile("deps/imgui/cimgui.cpp", &[_][]const u8{"-Wno-return-type-c-linkage"}); // "-D_DEBUG"
     exe.addCSourceFile("src/imgui_impl_main.cpp", &[_][]const u8{});
     exe.addCSourceFile("src/imgui_impl_sdl.cpp", &[_][]const u8{});
     exe.addCSourceFile("deps/imgui//imgui.cpp", &[_][]const u8{});
