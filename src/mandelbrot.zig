@@ -65,30 +65,26 @@ fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
                 const boundeds = magnitudes2(z) < limit;
                 const stabilizeds = magnitudes2(der) < eps_der2;
 
-                // TODO: improve once zig provides better tools with vectors
-                var all_diverged = true;
-                var all_stabilized = true;
-                const inc = veccmp: {
-                    var v: [vec_len]u16 = undefined;
-                    var j: u8 = 0;
-                    while (j < vec_len) : (j += 1) {
-                        const bounded = boundeds[j];
-                        const stabilized = stabilizeds[j];
-                        v[j] = if (bounded) 1 else 0;
-                        all_diverged = all_diverged and !bounded;
-                        all_stabilized = all_stabilized and stabilized;
-                    }
-                    break :veccmp @as(Vector(vec_len, u16), v);
-                };
+                const all_diverged = !@reduce(.Or, boundeds);
+                const all_stabilized = @reduce(.And, stabilizeds);
+
                 if (all_diverged)
                     break;
-                iters += inc;
-
-                // approx. to avoid wasting iterations when inside the set
                 if (all_stabilized) {
+                    // approx. to avoid wasting iterations when inside the set
                     iters = @splat(vec_len, max_iter);
                     break;
                 }
+
+                // TODO: improve once zig provides better tools with vectors (maybe some expand u1 -> u16?  or some masking?)
+                const inc = veccmp: {
+                    var v: Vector(vec_len, u16) = undefined;
+                    for (@as([vec_len]bool, boundeds)) |it, j| {
+                        v[j] = if (it) 1 else 0;
+                    }
+                    break :veccmp v;
+                };
+                iters += inc;
             }
 
             var total: u32 = 0;

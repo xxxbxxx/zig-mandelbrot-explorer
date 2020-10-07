@@ -9,12 +9,12 @@ const Imgui = @import("imgui.zig");
 const Complex = Mandelbrot.Complex;
 const Vector = std.meta.Vector;
 
-usingnamespace @cImport({
+const SDL = @cImport({
     @cDefine("SDL_MAIN_HANDLED", "1");
     @cInclude("SDL2/SDL.h");
 });
 
-extern fn ImGui_ImplSDL2_ProcessEvent(event: *const SDL_Event) bool;
+extern fn ImGui_ImplSDL2_ProcessEvent(event: *const SDL.SDL_Event) bool;
 
 // work-arounds:
 //pub const SDL_TOUCH_MOUSEID = Uint32 - 1;  -> "error: integer value 1 cannot be coerced to type 'type'""
@@ -182,16 +182,16 @@ pub fn main() !void {
             var transfo: ?AffineTransfo = null;
             var transfo_ref_mandelrect: Mandelbrot.RectOriented = mandel_compute_state.mandelrect;
 
-            var event: SDL_Event = undefined;
-            while (SDL_PollEvent(&event) != 0) {
+            var event: SDL.SDL_Event = undefined;
+            while (SDL.SDL_PollEvent(&event) != 0) {
                 _ = ImGui_ImplSDL2_ProcessEvent(&event);
-                if (event.type == SDL_QUIT)
+                if (event.type == SDL.SDL_QUIT)
                     quit = true;
 
                 if (!imgui_io.WantCaptureMouse) {
                     var ref_segment: ?Segment = null;
                     var target_segment: ?Segment = null;
-                    if (event.type == SDL_MOUSEWHEEL and event.wheel.which != zig_SDL_TOUCH_MOUSEID and event.wheel.y != 0) {
+                    if (event.type == SDL.SDL_MOUSEWHEEL and event.wheel.which != zig_SDL_TOUCH_MOUSEID and event.wheel.y != 0) {
                         ref_segment = Segment{ .a = Point{ .x = 0.5, .y = 0.5 }, .b = Point{ .x = 1, .y = 0.5 } };
                         target_segment = ref_segment;
                         if (event.wheel.y > 0) {
@@ -201,8 +201,8 @@ pub fn main() !void {
                         }
                     }
 
-                    if (event.type == SDL_MOUSEBUTTONDOWN and event.button.which != zig_SDL_TOUCH_MOUSEID) {
-                        if (event.button.button == SDL_BUTTON_RIGHT) {
+                    if (event.type == SDL.SDL_MOUSEBUTTONDOWN and event.button.which != zig_SDL_TOUCH_MOUSEID) {
+                        if (event.button.button == SDL.SDL_BUTTON_RIGHT) {
                             const click_pos = Point{ .x = @intToFloat(f32, event.button.x) / @intToFloat(f32, screen_width), .y = @intToFloat(f32, event.button.y) / @intToFloat(f32, screen_height) };
                             const target_pos = Point{ .x = 0.5, .y = 0.5 };
 
@@ -210,13 +210,13 @@ pub fn main() !void {
                             target_segment = Segment{ .a = target_pos, .b = Point{ .x = target_pos.x + 1, .y = target_pos.y } };
                         }
 
-                        if (event.button.button == SDL_BUTTON_LEFT) {
+                        if (event.button.button == SDL.SDL_BUTTON_LEFT) {
                             const click_pos = Point{ .x = @intToFloat(f32, event.button.x) / @intToFloat(f32, screen_width), .y = @intToFloat(f32, event.button.y) / @intToFloat(f32, screen_height) };
                             mouse_state.current = MouseState.ClicPos{ .pos = click_pos };
                             mouse_state.initial = mouse_state.current.?;
                         }
                     }
-                    if (event.type == SDL_MOUSEBUTTONUP and event.button.which != zig_SDL_TOUCH_MOUSEID and event.button.button == SDL_BUTTON_LEFT) {
+                    if (event.type == SDL.SDL_MOUSEBUTTONUP and event.button.which != zig_SDL_TOUCH_MOUSEID and event.button.button == SDL.SDL_BUTTON_LEFT) {
                         const click_pos = Point{ .x = @intToFloat(f32, event.button.x) / @intToFloat(f32, screen_width), .y = @intToFloat(f32, event.button.y) / @intToFloat(f32, screen_height) };
                         mouse_state.current = MouseState.ClicPos{ .pos = click_pos };
 
@@ -226,23 +226,23 @@ pub fn main() !void {
                         target_segment = Segment{ .a = Point{ .x = 0.5, .y = 0.5 }, .b = Point{ .x = 1, .y = 0.5 } };
                         mouse_state.current = null;
                     }
-                    if (event.type == SDL_MOUSEMOTION and event.motion.which != zig_SDL_TOUCH_MOUSEID and (event.motion.state & (1 << (SDL_BUTTON_LEFT - 1)) != 0)) {
+                    if (event.type == SDL.SDL_MOUSEMOTION and event.motion.which != zig_SDL_TOUCH_MOUSEID and (event.motion.state & (1 << (SDL.SDL_BUTTON_LEFT - 1)) != 0)) {
                         const click_pos = Point{ .x = @intToFloat(f32, event.motion.x) / @intToFloat(f32, screen_width), .y = @intToFloat(f32, event.motion.y) / @intToFloat(f32, screen_height) };
                         mouse_state.current = MouseState.ClicPos{ .pos = click_pos };
                     }
 
-                    if (event.type == SDL_FINGERMOTION or event.type == SDL_FINGERDOWN or event.type == SDL_FINGERUP) {
-                        if (event.type == SDL_FINGERDOWN) {
+                    if (event.type == SDL.SDL_FINGERMOTION or event.type == SDL.SDL_FINGERDOWN or event.type == SDL.SDL_FINGERUP) {
+                        if (event.type == SDL.SDL_FINGERDOWN) {
                             touch_state.addFinger(event.tfinger.fingerId).* = Point{ .x = event.tfinger.x, .y = event.tfinger.y };
                             touch_state.initial = touch_state.current;
                             touch_initial_mandelrect = mandel_compute_state.mandelrect;
                         }
-                        if (event.type == SDL_FINGERUP) {
+                        if (event.type == SDL.SDL_FINGERUP) {
                             touch_state.subFinger(event.tfinger.fingerId);
                             touch_state.initial = touch_state.current;
                             touch_initial_mandelrect = mandel_compute_state.mandelrect;
                         }
-                        if (event.type == SDL_FINGERMOTION) {
+                        if (event.type == SDL.SDL_FINGERMOTION) {
                             touch_state.getFinger(event.tfinger.fingerId).* = Point{ .x = event.tfinger.x, .y = event.tfinger.y };
                         }
 
