@@ -21,7 +21,7 @@ pub fn build(b: *Builder) void {
         exe.addSystemIncludeDir("deps/VulkanSDK/include");
         exe.addSystemIncludeDir("deps/SDL2-x86_64-w64-mingw32/include");
         exe.addLibPath("deps/SDL2-x86_64-w64-mingw32/lib");
-        exe.addLibPath("deps/VulkanSDK/lib"); // renamming vulkan-1.lib to libvulkan.a appears to work...
+        exe.addLibPath("deps/VulkanSDK/lib");
     }
 
     exe.addIncludeDir("src/");
@@ -34,7 +34,7 @@ pub fn build(b: *Builder) void {
     exe.addCSourceFile("deps/imgui//imgui_widgets.cpp", &[_][]const u8{});
 
     exe.linkSystemLibrary(if (windows) "SDL2.dll" else "SDL2");
-    exe.linkSystemLibrary("vulkan");
+    exe.linkSystemLibrary(if (windows) "vulkan-1" else "vulkan");
     exe.linkSystemLibrary("stdc++");
     exe.linkLibC();
 

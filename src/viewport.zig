@@ -245,6 +245,10 @@ fn getMemoryType(ctx: *Context, properties: VkMemoryPropertyFlags, type_bits: u3
     return 0xFFFFFFFF; // Unable to find memoryType
 }
 
+fn alignSize(size: usize, alignment: usize) usize {
+    return ((size - 1) / alignment + 1) * alignment;
+}
+
 fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDeviceMemory, p_buffer_size: *VkDeviceSize, new_size: usize, usage: VkBufferUsageFlagBits) !void {
     var err: VkResult = undefined;
 
@@ -253,12 +257,12 @@ fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDevi
     if (buffer_memory.* != null)
         vkFreeMemory(ctx.device, buffer_memory.*, ctx.vk_allocator);
 
-    const vertex_buffer_size_aligned: VkDeviceSize = ((new_size - 1) / ctx.buffer_memory_alignment + 1) * ctx.buffer_memory_alignment;
+    const size_aligned: VkDeviceSize = alignSize(new_size, ctx.buffer_memory_alignment);
     const buffer_info = VkBufferCreateInfo{
         .sType = .VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .size = vertex_buffer_size_aligned,
+        .size = size_aligned,
         .usage = @intCast(u32, @enumToInt(usage)),
         .sharingMode = .VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
@@ -281,7 +285,7 @@ fn createOrResizeBuffer(ctx: *Context, buffer: *VkBuffer, buffer_memory: *VkDevi
 
     err = vkBindBufferMemory(ctx.device, buffer.*, buffer_memory.*, 0);
     try checkVkResult(err);
-    p_buffer_size.* = new_size;
+    p_buffer_size.* = size_aligned;
 }
 
 const DisplayTransfo = struct {
@@ -323,9 +327,9 @@ fn setupRenderState(ctx: *Context, command_buffer: VkCommandBuffer, frd: *FrameR
             var vtx_dst: [*]Imgui.DrawVert = undefined;
             var idx_dst: [*]Imgui.DrawIdx = undefined;
 
-            err = vkMapMemory(ctx.device, frd.vertex_memory, 0, vertex_size, 0, @ptrCast([*c]?*c_void, &vtx_dst));
+            err = vkMapMemory(ctx.device, frd.vertex_memory, 0, alignSize(vertex_size, ctx.buffer_memory_alignment), 0, @ptrCast([*c]?*c_void, &vtx_dst));
             try checkVkResult(err);
-            err = vkMapMemory(ctx.device, frd.index_memory, 0, index_size, 0, @ptrCast([*c]?*c_void, &idx_dst));
+            err = vkMapMemory(ctx.device, frd.index_memory, 0, alignSize(index_size, ctx.buffer_memory_alignment), 0, @ptrCast([*c]?*c_void, &idx_dst));
             try checkVkResult(err);
 
             for (primitives_data) |prim| {
@@ -651,7 +655,7 @@ fn initTextureUpload(ctx: *Context, textureUpload: *TextureUpload, pixels: []con
     // Upload to Buffer:
     {
         var map: [*]u8 = undefined;
-        err = vkMapMemory(ctx.device, textureUpload.memory, offsetInMemory, pixels.len, 0, @ptrCast([*c]?*c_void, &map));
+        err = vkMapMemory(ctx.device, textureUpload.memory, offsetInMemory, alignSize(pixels.len, ctx.buffer_memory_alignment), 0, @ptrCast([*c]?*c_void, &map));
         try checkVkResult(err);
 
         @memcpy(map, pixels.ptr, pixels.len);
@@ -662,7 +666,7 @@ fn initTextureUpload(ctx: *Context, textureUpload: *TextureUpload, pixels: []con
                 .sType = .VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
                 .pNext = null,
                 .memory = textureUpload.memory,
-                .size = pixels.len,
+                .size = VK_WHOLE_SIZE,
                 .offset = offsetInMemory,
             },
         };
