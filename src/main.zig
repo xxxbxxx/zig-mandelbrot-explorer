@@ -305,7 +305,7 @@ pub fn main() !void {
                     const value_changed1 = Imgui.SliderInt("max iterations", &it.max_iter, 1, 50000);
                     const value_changed2 = Imgui.SliderInt("antialias", &it.supersamples, 1, 5);
                     const value_changed3 = Imgui.SliderInt("coarseness", &it.resolution_divider, 1, 8);
-                    const value_changed4 = Imgui.InputIntExt("precison bits (32,64,128)", &it.precision_bits, 32, 1, .{});
+                    const value_changed4 = Imgui.InputIntExt("precison bits (16,32,64,128)", &it.precision_bits, 32, 1, .{});
 
                     if ((value_changed1 or value_changed2 or value_changed3 or value_changed4) and mandel_compute_state.dirty == .done) {
                         mandel_compute_state.dirty = .previewed;

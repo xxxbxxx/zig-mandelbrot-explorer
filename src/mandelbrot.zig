@@ -168,8 +168,14 @@ pub fn computeLevels(buf: []Fixed, width: u32, height: u32, rect: RectOriented, 
 
     // choose comptime variant for runtime parameters
     const func = switch (real_bits) {
-        //0...16 => @panic("f16 in vector doesn't work so great  with llvm10"),
-        0...32 => switch (supersamples) {
+        0...16 => switch (supersamples) {
+            1 => MandelbrotComputer(1, f16).computeOnePoint,
+            2 => MandelbrotComputer(2, f16).computeOnePoint,
+            3 => MandelbrotComputer(3, f16).computeOnePoint,
+            4 => MandelbrotComputer(4, f16).computeOnePoint,
+            else => MandelbrotComputer(5, f16).computeOnePoint,
+        },
+        17...32 => switch (supersamples) {
             1 => MandelbrotComputer(1, f32).computeOnePoint,
             2 => MandelbrotComputer(2, f32).computeOnePoint,
             3 => MandelbrotComputer(3, f32).computeOnePoint,
