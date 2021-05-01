@@ -76,15 +76,8 @@ fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
                     break;
                 }
 
-                // TODO: improve once zig provides better tools with vectors (maybe some expand u1 -> u16?  or some masking?)
-                const inc = veccmp: {
-                    var v: Vector(vec_len, u16) = undefined;
-                    for (@as([vec_len]bool, boundeds)) |it, j| {
-                        v[j] = if (it) 1 else 0;
-                    }
-                    break :veccmp v;
-                };
-                iters += inc;
+                const inc = @bitCast(Vector(vec_len, u1), boundeds); // == @boolToInt
+                iters += @intCast(Vector(vec_len, u16), inc);
             }
 
             var total: u32 = 0;
@@ -99,14 +92,27 @@ fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
             comptime const samples = createSamplePattern(supersamples);
 
             var points: Complexs = undefined;
-            for (samples) |s, i| {
-                const x = (@intToFloat(Real, col) + s.x) / @intToFloat(Real, width);
-                const y = (@intToFloat(Real, line) + s.y) / @intToFloat(Real, height);
-                const axis_col = rect.axis_re.mul(Complex{ .re = x, .im = 0 });
-                const axis_lin = rect.axis_im.mul(Complex{ .re = y, .im = 0 });
-                const c = Complex.add(rect.origin, Complex.add(axis_col, axis_lin));
-                points.re[i] = @floatCast(RealType, c.re);
-                points.im[i] = @floatCast(RealType, c.im);
+            {
+                const cols = @splat(vec_len, @intToFloat(Real, col));
+                const lines = @splat(vec_len, @intToFloat(Real, line));
+                const iwidths = @splat(vec_len, 1.0 / @intToFloat(Real, width));
+                const iheights = @splat(vec_len, 1.0 / @intToFloat(Real, height));
+                const orig_res = @splat(vec_len, rect.origin.re);
+                const orig_ims = @splat(vec_len, rect.origin.im);
+                const axis_re_res = @splat(vec_len, rect.axis_re.re);
+                const axis_re_ims = @splat(vec_len, rect.axis_re.im);
+                const axis_im_res = @splat(vec_len, rect.axis_im.re);
+                const axis_im_ims = @splat(vec_len, rect.axis_im.im);
+
+                const xs = (cols + samples.xs) * iwidths;
+                const ys = (lines + samples.ys) * iheights;
+                const c_res = orig_res + (axis_re_res * xs + axis_im_res * ys);
+                const c_ims = orig_ims + (axis_re_ims * xs + axis_im_ims * ys);
+
+                inline for ([1]u1{0} ** vec_len) |_, i| { // TODO: @floatCast(Vector) not supported yet.
+                    points.re[i] = @floatCast(RealType, c_res[i]);
+                    points.im[i] = @floatCast(RealType, c_ims[i]);
+                }
             }
 
             const total_iter = computeTotalIterations(points, max_iter);
@@ -115,27 +121,21 @@ fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
     };
 }
 
-const SamplePoint = struct {
-    x: Real,
-    y: Real,
-};
-
-fn createSamplePattern(comptime n: u32) [n * n]SamplePoint {
+fn createSamplePattern(comptime n: u32) struct { xs: Vector(n * n, Real), ys: Vector(n * n, Real) } {
     const center = @intToFloat(Real, n - 1) * 0.5;
     const size = @intToFloat(Real, 2 + n);
-    var samples: [n * n]SamplePoint = undefined;
+    var xs: Vector(n * n, Real) = undefined;
+    var ys: Vector(n * n, Real) = undefined;
     var j: u32 = 0;
     while (j < n) : (j += 1) {
         var i: u32 = 0;
         while (i < n) : (i += 1) {
-            samples[i + n * j] = SamplePoint{
-                .x = (@intToFloat(Real, i) - center) / size,
-                .y = (@intToFloat(Real, j) - center) / size,
-            };
+            xs[i + n * j] = (@intToFloat(Real, i) - center) / size;
+            ys[i + n * j] = (@intToFloat(Real, j) - center) / size;
         }
     }
 
-    return samples;
+    return .{ .xs = xs, .ys = ys };
 }
 
 pub const RectOriented = struct {
@@ -283,24 +283,7 @@ fn saturate4(vals: anytype) Vector(4, u8) {
         saturate(vals[2]),
         saturate(vals[3]),
     };
-}
-
-fn intCast4(comptime T: type, vals: anytype) Vector(4, T) {
-    return [_]T{
-        @intCast(T, vals[0]),
-        @intCast(T, vals[1]),
-        @intCast(T, vals[2]),
-        @intCast(T, vals[3]),
-    };
-}
-
-fn floatCast4(comptime T: type, vals: anytype) Vector(4, T) {
-    return [_]T{
-        @floatCast(T, vals[0]),
-        @floatCast(T, vals[1]),
-        @floatCast(T, vals[2]),
-        @floatCast(T, vals[3]),
-    };
+    // TODO: @shuffle + @floatToInt(vector)?
 }
 
 fn intToFloat4(comptime T: type, vals: anytype) Vector(4, T) {
@@ -344,7 +327,7 @@ fn levelsToColors(level: Vector(4, u16)) Vector(4, u32) {
     const k000001 = @splat(4, @as(u32, 0x000001));
     const k000100 = @splat(4, @as(u32, 0x000100));
     const k010000 = @splat(4, @as(u32, 0x010000));
-    const ABGR = kFF000000 + k000001 * intCast4(u32, saturate4(R)) + k000100 * intCast4(u32, saturate4(G)) + k010000 * intCast4(u32, saturate4(B));
+    const ABGR = kFF000000 + k000001 * @intCast(Vector(4, u32), saturate4(R)) + k000100 * @intCast(Vector(4, u32), saturate4(G)) + k010000 * @intCast(Vector(4, u32), saturate4(B));
 
     return ABGR;
 }
