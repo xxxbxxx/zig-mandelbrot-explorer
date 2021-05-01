@@ -104,11 +104,15 @@ fn tagNameZ(v: anytype, storage: []u8) [:0]const u8 {
 }
 
 pub fn main() !void {
-    //Mandelbrot.drawSetAscii(Mandelbrot.RectOriented{
-    //    .origin = Complex{ .re = -2, .im = -1 },
-    //    .axis_re = Complex{ .re = 3, .im = 0 },
-    //    .axis_im = Complex{ .re = 0, .im = 2 },
-    //});
+    if (false) {
+        Mandelbrot.drawSetAscii(Mandelbrot.RectOriented{
+            .origin = Complex{ .re = -2, .im = -1 },
+            .axis_re = Complex{ .re = 3, .im = 0 },
+            .axis_im = Complex{ .re = 0, .im = 2 },
+        });
+        return;
+    }
+
     const allocator = std.heap.c_allocator;
 
     var viewport = try Viewport.init("Mandelbrot set explorer", 1280, 720, allocator);

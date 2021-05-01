@@ -220,9 +220,9 @@ pub fn drawSetAscii(rect: RectOriented) void {
         var col: u32 = 0;
         while (col < width) : (col += 1) {
             const level = MandelbrotComputer(3, f32).computeOnePoint(col, lin, width, height, rect, 150);
-            span[col] = grayscale[(level * grayscale.len) / range_Fixed];
+            span[col] = grayscale[(level * (grayscale.len - 1)) / range_Fixed];
         }
-        warn("{}\n", .{span});
+        warn("{s}\n", .{span});
     }
 }
 
