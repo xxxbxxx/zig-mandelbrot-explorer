@@ -944,12 +944,12 @@ pub const StyleVar = extern enum {
 
 pub const Color = extern struct {
     Value: Vec4,
-    pub fn HSVExt(self: *Color, h: f32, s: f32, v: f32, a: f32) callconv(.Inline) Color {
+    pub inline fn HSVExt(self: *Color, h: f32, s: f32, v: f32, a: f32) Color {
         var out: Color = undefined;
         raw.ImColor_HSV_nonUDT(&out, self, h, s, v, a);
         return out;
     }
-    pub fn HSV(self: *Color, h: f32, s: f32, v: f32) callconv(.Inline) Color {
+    pub inline fn HSV(self: *Color, h: f32, s: f32, v: f32) Color {
         return HSVExt(self, h, s, v, 1.0);
     }
 
@@ -958,7 +958,7 @@ pub const Color = extern struct {
 
     /// initIntExt(self: *Color, r: i32, g: i32, b: i32, a: i32) void
     pub const initIntExt = raw.ImColor_ImColorInt;
-    pub fn initInt(self: *Color, r: i32, g: i32, b: i32) callconv(.Inline) void {
+    pub inline fn initInt(self: *Color, r: i32, g: i32, b: i32) void {
         return initIntExt(self, r, g, b, 255);
     }
 
@@ -967,7 +967,7 @@ pub const Color = extern struct {
 
     /// initFloatExt(self: *Color, r: f32, g: f32, b: f32, a: f32) void
     pub const initFloatExt = raw.ImColor_ImColorFloat;
-    pub fn initFloat(self: *Color, r: f32, g: f32, b: f32) callconv(.Inline) void {
+    pub inline fn initFloat(self: *Color, r: f32, g: f32, b: f32) void {
         return initFloatExt(self, r, g, b, 1.0);
     }
 
@@ -976,7 +976,7 @@ pub const Color = extern struct {
 
     /// SetHSVExt(self: *Color, h: f32, s: f32, v: f32, a: f32) void
     pub const SetHSVExt = raw.ImColor_SetHSV;
-    pub fn SetHSV(self: *Color, h: f32, s: f32, v: f32) callconv(.Inline) void {
+    pub inline fn SetHSV(self: *Color, h: f32, s: f32, v: f32) void {
         return SetHSVExt(self, h, s, v, 1.0);
     }
 
@@ -1049,7 +1049,7 @@ pub const DrawList = extern struct {
 
     /// AddBezierCurveExt(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32, num_segments: i32) void
     pub const AddBezierCurveExt = raw.ImDrawList_AddBezierCurve;
-    pub fn AddBezierCurve(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32) callconv(.Inline) void {
+    pub inline fn AddBezierCurve(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32) void {
         return AddBezierCurveExt(self, p1, p2, p3, p4, col, thickness, 0);
     }
 
@@ -1058,13 +1058,13 @@ pub const DrawList = extern struct {
 
     /// AddCircleExt(self: *DrawList, center: Vec2, radius: f32, col: u32, num_segments: i32, thickness: f32) void
     pub const AddCircleExt = raw.ImDrawList_AddCircle;
-    pub fn AddCircle(self: *DrawList, center: Vec2, radius: f32, col: u32) callconv(.Inline) void {
+    pub inline fn AddCircle(self: *DrawList, center: Vec2, radius: f32, col: u32) void {
         return AddCircleExt(self, center, radius, col, 12, 1.0);
     }
 
     /// AddCircleFilledExt(self: *DrawList, center: Vec2, radius: f32, col: u32, num_segments: i32) void
     pub const AddCircleFilledExt = raw.ImDrawList_AddCircleFilled;
-    pub fn AddCircleFilled(self: *DrawList, center: Vec2, radius: f32, col: u32) callconv(.Inline) void {
+    pub inline fn AddCircleFilled(self: *DrawList, center: Vec2, radius: f32, col: u32) void {
         return AddCircleFilledExt(self, center, radius, col, 12);
     }
 
@@ -1076,31 +1076,31 @@ pub const DrawList = extern struct {
 
     /// AddImageExt(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32) void
     pub const AddImageExt = raw.ImDrawList_AddImage;
-    pub fn AddImage(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2) callconv(.Inline) void {
+    pub inline fn AddImage(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2) void {
         return AddImageExt(self, user_texture_id, p_min, p_max, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, 0xFFFFFFFF);
     }
 
     /// AddImageQuadExt(self: *DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, uv1: Vec2, uv2: Vec2, uv3: Vec2, uv4: Vec2, col: u32) void
     pub const AddImageQuadExt = raw.ImDrawList_AddImageQuad;
-    pub fn AddImageQuad(self: *DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) callconv(.Inline) void {
+    pub inline fn AddImageQuad(self: *DrawList, user_texture_id: TextureID, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2) void {
         return AddImageQuadExt(self, user_texture_id, p1, p2, p3, p4, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 0, .y = 1 }, 0xFFFFFFFF);
     }
-    pub fn AddImageRoundedExt(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags) callconv(.Inline) void {
+    pub inline fn AddImageRoundedExt(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags) void {
         return raw.ImDrawList_AddImageRounded(self, user_texture_id, p_min, p_max, uv_min, uv_max, col, rounding, rounding_corners.toInt());
     }
-    pub fn AddImageRounded(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32) callconv(.Inline) void {
+    pub inline fn AddImageRounded(self: *DrawList, user_texture_id: TextureID, p_min: Vec2, p_max: Vec2, uv_min: Vec2, uv_max: Vec2, col: u32, rounding: f32) void {
         return AddImageRoundedExt(self, user_texture_id, p_min, p_max, uv_min, uv_max, col, rounding, DrawCornerFlags.All);
     }
 
     /// AddLineExt(self: *DrawList, p1: Vec2, p2: Vec2, col: u32, thickness: f32) void
     pub const AddLineExt = raw.ImDrawList_AddLine;
-    pub fn AddLine(self: *DrawList, p1: Vec2, p2: Vec2, col: u32) callconv(.Inline) void {
+    pub inline fn AddLine(self: *DrawList, p1: Vec2, p2: Vec2, col: u32) void {
         return AddLineExt(self, p1, p2, col, 1.0);
     }
 
     /// AddNgonExt(self: *DrawList, center: Vec2, radius: f32, col: u32, num_segments: i32, thickness: f32) void
     pub const AddNgonExt = raw.ImDrawList_AddNgon;
-    pub fn AddNgon(self: *DrawList, center: Vec2, radius: f32, col: u32, num_segments: i32) callconv(.Inline) void {
+    pub inline fn AddNgon(self: *DrawList, center: Vec2, radius: f32, col: u32, num_segments: i32) void {
         return AddNgonExt(self, center, radius, col, num_segments, 1.0);
     }
 
@@ -1112,22 +1112,22 @@ pub const DrawList = extern struct {
 
     /// AddQuadExt(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32, thickness: f32) void
     pub const AddQuadExt = raw.ImDrawList_AddQuad;
-    pub fn AddQuad(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32) callconv(.Inline) void {
+    pub inline fn AddQuad(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32) void {
         return AddQuadExt(self, p1, p2, p3, p4, col, 1.0);
     }
 
     /// AddQuadFilled(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2, col: u32) void
     pub const AddQuadFilled = raw.ImDrawList_AddQuadFilled;
-    pub fn AddRectExt(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags, thickness: f32) callconv(.Inline) void {
+    pub inline fn AddRectExt(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags, thickness: f32) void {
         return raw.ImDrawList_AddRect(self, p_min, p_max, col, rounding, rounding_corners.toInt(), thickness);
     }
-    pub fn AddRect(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32) callconv(.Inline) void {
+    pub inline fn AddRect(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32) void {
         return AddRectExt(self, p_min, p_max, col, 0.0, DrawCornerFlags.All, 1.0);
     }
-    pub fn AddRectFilledExt(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags) callconv(.Inline) void {
+    pub inline fn AddRectFilledExt(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32, rounding: f32, rounding_corners: DrawCornerFlags) void {
         return raw.ImDrawList_AddRectFilled(self, p_min, p_max, col, rounding, rounding_corners.toInt());
     }
-    pub fn AddRectFilled(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32) callconv(.Inline) void {
+    pub inline fn AddRectFilled(self: *DrawList, p_min: Vec2, p_max: Vec2, col: u32) void {
         return AddRectFilledExt(self, p_min, p_max, col, 0.0, DrawCornerFlags.All);
     }
 
@@ -1136,19 +1136,19 @@ pub const DrawList = extern struct {
 
     /// AddTextVec2Ext(self: *DrawList, pos: Vec2, col: u32, text_begin: ?[*]const u8, text_end: ?[*]const u8) void
     pub const AddTextVec2Ext = raw.ImDrawList_AddTextVec2;
-    pub fn AddTextVec2(self: *DrawList, pos: Vec2, col: u32, text_begin: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn AddTextVec2(self: *DrawList, pos: Vec2, col: u32, text_begin: ?[*]const u8) void {
         return AddTextVec2Ext(self, pos, col, text_begin, null);
     }
 
     /// AddTextFontPtrExt(self: *DrawList, font: ?*const Font, font_size: f32, pos: Vec2, col: u32, text_begin: ?[*]const u8, text_end: ?[*]const u8, wrap_width: f32, cpu_fine_clip_rect: ?*const Vec4) void
     pub const AddTextFontPtrExt = raw.ImDrawList_AddTextFontPtr;
-    pub fn AddTextFontPtr(self: *DrawList, font: ?*const Font, font_size: f32, pos: Vec2, col: u32, text_begin: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn AddTextFontPtr(self: *DrawList, font: ?*const Font, font_size: f32, pos: Vec2, col: u32, text_begin: ?[*]const u8) void {
         return AddTextFontPtrExt(self, font, font_size, pos, col, text_begin, null, 0.0, null);
     }
 
     /// AddTriangleExt(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32, thickness: f32) void
     pub const AddTriangleExt = raw.ImDrawList_AddTriangle;
-    pub fn AddTriangle(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32) callconv(.Inline) void {
+    pub inline fn AddTriangle(self: *DrawList, p1: Vec2, p2: Vec2, p3: Vec2, col: u32) void {
         return AddTriangleExt(self, p1, p2, p3, col, 1.0);
     }
 
@@ -1172,12 +1172,12 @@ pub const DrawList = extern struct {
 
     /// CloneOutput(self: *const DrawList) ?*DrawList
     pub const CloneOutput = raw.ImDrawList_CloneOutput;
-    pub fn GetClipRectMax(self: *const DrawList) callconv(.Inline) Vec2 {
+    pub inline fn GetClipRectMax(self: *const DrawList) Vec2 {
         var out: Vec2 = undefined;
         raw.ImDrawList_GetClipRectMax_nonUDT(&out, self);
         return out;
     }
-    pub fn GetClipRectMin(self: *const DrawList) callconv(.Inline) Vec2 {
+    pub inline fn GetClipRectMin(self: *const DrawList) Vec2 {
         var out: Vec2 = undefined;
         raw.ImDrawList_GetClipRectMin_nonUDT(&out, self);
         return out;
@@ -1188,7 +1188,7 @@ pub const DrawList = extern struct {
 
     /// PathArcToExt(self: *DrawList, center: Vec2, radius: f32, a_min: f32, a_max: f32, num_segments: i32) void
     pub const PathArcToExt = raw.ImDrawList_PathArcTo;
-    pub fn PathArcTo(self: *DrawList, center: Vec2, radius: f32, a_min: f32, a_max: f32) callconv(.Inline) void {
+    pub inline fn PathArcTo(self: *DrawList, center: Vec2, radius: f32, a_min: f32, a_max: f32) void {
         return PathArcToExt(self, center, radius, a_min, a_max, 10);
     }
 
@@ -1197,7 +1197,7 @@ pub const DrawList = extern struct {
 
     /// PathBezierCurveToExt(self: *DrawList, p2: Vec2, p3: Vec2, p4: Vec2, num_segments: i32) void
     pub const PathBezierCurveToExt = raw.ImDrawList_PathBezierCurveTo;
-    pub fn PathBezierCurveTo(self: *DrawList, p2: Vec2, p3: Vec2, p4: Vec2) callconv(.Inline) void {
+    pub inline fn PathBezierCurveTo(self: *DrawList, p2: Vec2, p3: Vec2, p4: Vec2) void {
         return PathBezierCurveToExt(self, p2, p3, p4, 0);
     }
 
@@ -1212,16 +1212,16 @@ pub const DrawList = extern struct {
 
     /// PathLineToMergeDuplicate(self: *DrawList, pos: Vec2) void
     pub const PathLineToMergeDuplicate = raw.ImDrawList_PathLineToMergeDuplicate;
-    pub fn PathRectExt(self: *DrawList, rect_min: Vec2, rect_max: Vec2, rounding: f32, rounding_corners: DrawCornerFlags) callconv(.Inline) void {
+    pub inline fn PathRectExt(self: *DrawList, rect_min: Vec2, rect_max: Vec2, rounding: f32, rounding_corners: DrawCornerFlags) void {
         return raw.ImDrawList_PathRect(self, rect_min, rect_max, rounding, rounding_corners.toInt());
     }
-    pub fn PathRect(self: *DrawList, rect_min: Vec2, rect_max: Vec2) callconv(.Inline) void {
+    pub inline fn PathRect(self: *DrawList, rect_min: Vec2, rect_max: Vec2) void {
         return PathRectExt(self, rect_min, rect_max, 0.0, DrawCornerFlags.All);
     }
 
     /// PathStrokeExt(self: *DrawList, col: u32, closed: bool, thickness: f32) void
     pub const PathStrokeExt = raw.ImDrawList_PathStroke;
-    pub fn PathStroke(self: *DrawList, col: u32, closed: bool) callconv(.Inline) void {
+    pub inline fn PathStroke(self: *DrawList, col: u32, closed: bool) void {
         return PathStrokeExt(self, col, closed, 1.0);
     }
 
@@ -1257,7 +1257,7 @@ pub const DrawList = extern struct {
 
     /// PushClipRectExt(self: *DrawList, clip_rect_min: Vec2, clip_rect_max: Vec2, intersect_with_current_clip_rect: bool) void
     pub const PushClipRectExt = raw.ImDrawList_PushClipRect;
-    pub fn PushClipRect(self: *DrawList, clip_rect_min: Vec2, clip_rect_max: Vec2) callconv(.Inline) void {
+    pub inline fn PushClipRect(self: *DrawList, clip_rect_min: Vec2, clip_rect_max: Vec2) void {
         return PushClipRectExt(self, clip_rect_min, clip_rect_max, false);
     }
 
@@ -1334,18 +1334,18 @@ pub const Font = extern struct {
 
     /// AddRemapCharExt(self: *Font, dst: Wchar, src: Wchar, overwrite_dst: bool) void
     pub const AddRemapCharExt = raw.ImFont_AddRemapChar;
-    pub fn AddRemapChar(self: *Font, dst: Wchar, src: Wchar) callconv(.Inline) void {
+    pub inline fn AddRemapChar(self: *Font, dst: Wchar, src: Wchar) void {
         return AddRemapCharExt(self, dst, src, true);
     }
 
     /// BuildLookupTable(self: *Font) void
     pub const BuildLookupTable = raw.ImFont_BuildLookupTable;
-    pub fn CalcTextSizeAExt(self: *const Font, size: f32, max_width: f32, wrap_width: f32, text_begin: ?[*]const u8, text_end: ?[*]const u8, remaining: ?*?[*:0]const u8) callconv(.Inline) Vec2 {
+    pub inline fn CalcTextSizeAExt(self: *const Font, size: f32, max_width: f32, wrap_width: f32, text_begin: ?[*]const u8, text_end: ?[*]const u8, remaining: ?*?[*:0]const u8) Vec2 {
         var out: Vec2 = undefined;
         raw.ImFont_CalcTextSizeA_nonUDT(&out, self, size, max_width, wrap_width, text_begin, text_end, remaining);
         return out;
     }
-    pub fn CalcTextSizeA(self: *const Font, size: f32, max_width: f32, wrap_width: f32, text_begin: ?[*]const u8) callconv(.Inline) Vec2 {
+    pub inline fn CalcTextSizeA(self: *const Font, size: f32, max_width: f32, wrap_width: f32, text_begin: ?[*]const u8) Vec2 {
         return CalcTextSizeAExt(self, size, max_width, wrap_width, text_begin, null, null);
     }
 
@@ -1381,7 +1381,7 @@ pub const Font = extern struct {
 
     /// RenderTextExt(self: *const Font, draw_list: ?*DrawList, size: f32, pos: Vec2, col: u32, clip_rect: Vec4, text_begin: ?[*]const u8, text_end: ?[*]const u8, wrap_width: f32, cpu_fine_clip: bool) void
     pub const RenderTextExt = raw.ImFont_RenderText;
-    pub fn RenderText(self: *const Font, draw_list: ?*DrawList, size: f32, pos: Vec2, col: u32, clip_rect: Vec4, text_begin: ?[*]const u8, text_end: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn RenderText(self: *const Font, draw_list: ?*DrawList, size: f32, pos: Vec2, col: u32, clip_rect: Vec4, text_begin: ?[*]const u8, text_end: ?[*]const u8) void {
         return RenderTextExt(self, draw_list, size, pos, col, clip_rect, text_begin, text_end, 0.0, false);
     }
 
@@ -1411,7 +1411,7 @@ pub const FontAtlas = extern struct {
 
     /// AddCustomRectFontGlyphExt(self: *FontAtlas, font: ?*Font, id: Wchar, width: i32, height: i32, advance_x: f32, offset: Vec2) i32
     pub const AddCustomRectFontGlyphExt = raw.ImFontAtlas_AddCustomRectFontGlyph;
-    pub fn AddCustomRectFontGlyph(self: *FontAtlas, font: ?*Font, id: Wchar, width: i32, height: i32, advance_x: f32) callconv(.Inline) i32 {
+    pub inline fn AddCustomRectFontGlyph(self: *FontAtlas, font: ?*Font, id: Wchar, width: i32, height: i32, advance_x: f32) i32 {
         return AddCustomRectFontGlyphExt(self, font, id, width, height, advance_x, .{ .x = 0, .y = 0 });
     }
 
@@ -1423,31 +1423,31 @@ pub const FontAtlas = extern struct {
 
     /// AddFontDefaultExt(self: *FontAtlas, font_cfg: ?*const FontConfig) ?*Font
     pub const AddFontDefaultExt = raw.ImFontAtlas_AddFontDefault;
-    pub fn AddFontDefault(self: *FontAtlas) callconv(.Inline) ?*Font {
+    pub inline fn AddFontDefault(self: *FontAtlas) ?*Font {
         return AddFontDefaultExt(self, null);
     }
 
     /// AddFontFromFileTTFExt(self: *FontAtlas, filename: ?[*:0]const u8, size_pixels: f32, font_cfg: ?*const FontConfig, glyph_ranges: ?[*:0]const Wchar) ?*Font
     pub const AddFontFromFileTTFExt = raw.ImFontAtlas_AddFontFromFileTTF;
-    pub fn AddFontFromFileTTF(self: *FontAtlas, filename: ?[*:0]const u8, size_pixels: f32) callconv(.Inline) ?*Font {
+    pub inline fn AddFontFromFileTTF(self: *FontAtlas, filename: ?[*:0]const u8, size_pixels: f32) ?*Font {
         return AddFontFromFileTTFExt(self, filename, size_pixels, null, null);
     }
 
     /// AddFontFromMemoryCompressedBase85TTFExt(self: *FontAtlas, compressed_font_data_base85: ?[*]const u8, size_pixels: f32, font_cfg: ?*const FontConfig, glyph_ranges: ?[*:0]const Wchar) ?*Font
     pub const AddFontFromMemoryCompressedBase85TTFExt = raw.ImFontAtlas_AddFontFromMemoryCompressedBase85TTF;
-    pub fn AddFontFromMemoryCompressedBase85TTF(self: *FontAtlas, compressed_font_data_base85: ?[*]const u8, size_pixels: f32) callconv(.Inline) ?*Font {
+    pub inline fn AddFontFromMemoryCompressedBase85TTF(self: *FontAtlas, compressed_font_data_base85: ?[*]const u8, size_pixels: f32) ?*Font {
         return AddFontFromMemoryCompressedBase85TTFExt(self, compressed_font_data_base85, size_pixels, null, null);
     }
 
     /// AddFontFromMemoryCompressedTTFExt(self: *FontAtlas, compressed_font_data: ?*const c_void, compressed_font_size: i32, size_pixels: f32, font_cfg: ?*const FontConfig, glyph_ranges: ?[*:0]const Wchar) ?*Font
     pub const AddFontFromMemoryCompressedTTFExt = raw.ImFontAtlas_AddFontFromMemoryCompressedTTF;
-    pub fn AddFontFromMemoryCompressedTTF(self: *FontAtlas, compressed_font_data: ?*const c_void, compressed_font_size: i32, size_pixels: f32) callconv(.Inline) ?*Font {
+    pub inline fn AddFontFromMemoryCompressedTTF(self: *FontAtlas, compressed_font_data: ?*const c_void, compressed_font_size: i32, size_pixels: f32) ?*Font {
         return AddFontFromMemoryCompressedTTFExt(self, compressed_font_data, compressed_font_size, size_pixels, null, null);
     }
 
     /// AddFontFromMemoryTTFExt(self: *FontAtlas, font_data: ?*c_void, font_size: i32, size_pixels: f32, font_cfg: ?*const FontConfig, glyph_ranges: ?[*:0]const Wchar) ?*Font
     pub const AddFontFromMemoryTTFExt = raw.ImFontAtlas_AddFontFromMemoryTTF;
-    pub fn AddFontFromMemoryTTF(self: *FontAtlas, font_data: ?*c_void, font_size: i32, size_pixels: f32) callconv(.Inline) ?*Font {
+    pub inline fn AddFontFromMemoryTTF(self: *FontAtlas, font_data: ?*c_void, font_size: i32, size_pixels: f32) ?*Font {
         return AddFontFromMemoryTTFExt(self, font_data, font_size, size_pixels, null, null);
     }
 
@@ -1501,13 +1501,13 @@ pub const FontAtlas = extern struct {
 
     /// GetTexDataAsAlpha8Ext(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32, out_bytes_per_pixel: ?*i32) void
     pub const GetTexDataAsAlpha8Ext = raw.ImFontAtlas_GetTexDataAsAlpha8;
-    pub fn GetTexDataAsAlpha8(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32) callconv(.Inline) void {
+    pub inline fn GetTexDataAsAlpha8(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32) void {
         return GetTexDataAsAlpha8Ext(self, out_pixels, out_width, out_height, null);
     }
 
     /// GetTexDataAsRGBA32Ext(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32, out_bytes_per_pixel: ?*i32) void
     pub const GetTexDataAsRGBA32Ext = raw.ImFontAtlas_GetTexDataAsRGBA32;
-    pub fn GetTexDataAsRGBA32(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32) callconv(.Inline) void {
+    pub inline fn GetTexDataAsRGBA32(self: *FontAtlas, out_pixels: *?[*]u8, out_width: *i32, out_height: *i32) void {
         return GetTexDataAsRGBA32Ext(self, out_pixels, out_width, out_height, null);
     }
 
@@ -1596,7 +1596,7 @@ pub const FontGlyphRangesBuilder = extern struct {
 
     /// AddTextExt(self: *FontGlyphRangesBuilder, text: ?[*]const u8, text_end: ?[*]const u8) void
     pub const AddTextExt = raw.ImFontGlyphRangesBuilder_AddText;
-    pub fn AddText(self: *FontGlyphRangesBuilder, text: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn AddText(self: *FontGlyphRangesBuilder, text: ?[*]const u8) void {
         return AddTextExt(self, text, null);
     }
 
@@ -1739,7 +1739,7 @@ pub const InputTextCallbackData = extern struct {
 
     /// InsertCharsExt(self: *InputTextCallbackData, pos: i32, text: ?[*]const u8, text_end: ?[*]const u8) void
     pub const InsertCharsExt = raw.ImGuiInputTextCallbackData_InsertChars;
-    pub fn InsertChars(self: *InputTextCallbackData, pos: i32, text: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn InsertChars(self: *InputTextCallbackData, pos: i32, text: ?[*]const u8) void {
         return InsertCharsExt(self, pos, text, null);
     }
 
@@ -1757,7 +1757,7 @@ pub const ListClipper = extern struct {
 
     /// BeginExt(self: *ListClipper, items_count: i32, items_height: f32) void
     pub const BeginExt = raw.ImGuiListClipper_Begin;
-    pub fn Begin(self: *ListClipper, items_count: i32) callconv(.Inline) void {
+    pub inline fn Begin(self: *ListClipper, items_count: i32) void {
         return BeginExt(self, items_count, -1.0);
     }
 
@@ -1766,7 +1766,7 @@ pub const ListClipper = extern struct {
 
     /// initExt(self: *ListClipper, items_count: i32, items_height: f32) void
     pub const initExt = raw.ImGuiListClipper_ImGuiListClipper;
-    pub fn init(self: *ListClipper) callconv(.Inline) void {
+    pub inline fn init(self: *ListClipper) void {
         return initExt(self, -1, -1.0);
     }
 
@@ -1834,37 +1834,37 @@ pub const Storage = extern struct {
 
     /// GetBoolExt(self: *const Storage, key: ID, default_val: bool) bool
     pub const GetBoolExt = raw.ImGuiStorage_GetBool;
-    pub fn GetBool(self: *const Storage, key: ID) callconv(.Inline) bool {
+    pub inline fn GetBool(self: *const Storage, key: ID) bool {
         return GetBoolExt(self, key, false);
     }
 
     /// GetBoolRefExt(self: *Storage, key: ID, default_val: bool) ?*bool
     pub const GetBoolRefExt = raw.ImGuiStorage_GetBoolRef;
-    pub fn GetBoolRef(self: *Storage, key: ID) callconv(.Inline) ?*bool {
+    pub inline fn GetBoolRef(self: *Storage, key: ID) ?*bool {
         return GetBoolRefExt(self, key, false);
     }
 
     /// GetFloatExt(self: *const Storage, key: ID, default_val: f32) f32
     pub const GetFloatExt = raw.ImGuiStorage_GetFloat;
-    pub fn GetFloat(self: *const Storage, key: ID) callconv(.Inline) f32 {
+    pub inline fn GetFloat(self: *const Storage, key: ID) f32 {
         return GetFloatExt(self, key, 0.0);
     }
 
     /// GetFloatRefExt(self: *Storage, key: ID, default_val: f32) ?*f32
     pub const GetFloatRefExt = raw.ImGuiStorage_GetFloatRef;
-    pub fn GetFloatRef(self: *Storage, key: ID) callconv(.Inline) ?*f32 {
+    pub inline fn GetFloatRef(self: *Storage, key: ID) ?*f32 {
         return GetFloatRefExt(self, key, 0.0);
     }
 
     /// GetIntExt(self: *const Storage, key: ID, default_val: i32) i32
     pub const GetIntExt = raw.ImGuiStorage_GetInt;
-    pub fn GetInt(self: *const Storage, key: ID) callconv(.Inline) i32 {
+    pub inline fn GetInt(self: *const Storage, key: ID) i32 {
         return GetIntExt(self, key, 0);
     }
 
     /// GetIntRefExt(self: *Storage, key: ID, default_val: i32) ?*i32
     pub const GetIntRefExt = raw.ImGuiStorage_GetIntRef;
-    pub fn GetIntRef(self: *Storage, key: ID) callconv(.Inline) ?*i32 {
+    pub inline fn GetIntRef(self: *Storage, key: ID) ?*i32 {
         return GetIntRefExt(self, key, 0);
     }
 
@@ -1873,7 +1873,7 @@ pub const Storage = extern struct {
 
     /// GetVoidPtrRefExt(self: *Storage, key: ID, default_val: ?*c_void) ?*?*c_void
     pub const GetVoidPtrRefExt = raw.ImGuiStorage_GetVoidPtrRef;
-    pub fn GetVoidPtrRef(self: *Storage, key: ID) callconv(.Inline) ?*?*c_void {
+    pub inline fn GetVoidPtrRef(self: *Storage, key: ID) ?*?*c_void {
         return GetVoidPtrRefExt(self, key, null);
     }
 
@@ -1966,7 +1966,7 @@ pub const TextBuffer = extern struct {
 
     /// appendExt(self: *TextBuffer, str: ?[*]const u8, str_end: ?[*]const u8) void
     pub const appendExt = raw.ImGuiTextBuffer_append;
-    pub fn append(self: *TextBuffer, str: ?[*]const u8) callconv(.Inline) void {
+    pub inline fn append(self: *TextBuffer, str: ?[*]const u8) void {
         return appendExt(self, str, null);
     }
 
@@ -2011,13 +2011,13 @@ pub const TextFilter = extern struct {
 
     /// DrawExt(self: *TextFilter, label: ?[*:0]const u8, width: f32) bool
     pub const DrawExt = raw.ImGuiTextFilter_Draw;
-    pub fn Draw(self: *TextFilter) callconv(.Inline) bool {
+    pub inline fn Draw(self: *TextFilter) bool {
         return DrawExt(self, "Filter(inc,-exc)", 0.0);
     }
 
     /// initExt(self: *TextFilter, default_filter: ?[*:0]const u8) void
     pub const initExt = raw.ImGuiTextFilter_ImGuiTextFilter;
-    pub fn init(self: *TextFilter) callconv(.Inline) void {
+    pub inline fn init(self: *TextFilter) void {
         return initExt(self, "");
     }
 
@@ -2026,7 +2026,7 @@ pub const TextFilter = extern struct {
 
     /// PassFilterExt(self: *const TextFilter, text: ?[*]const u8, text_end: ?[*]const u8) bool
     pub const PassFilterExt = raw.ImGuiTextFilter_PassFilter;
-    pub fn PassFilter(self: *const TextFilter, text: ?[*]const u8) callconv(.Inline) bool {
+    pub inline fn PassFilter(self: *const TextFilter, text: ?[*]const u8) bool {
         return PassFilterExt(self, text, null);
     }
 
@@ -3255,10 +3255,10 @@ pub fn Vector(comptime T: type) type {
         pub usingnamespace getFTABLE_ImVector(T);
     };
 }
-pub fn AcceptDragDropPayloadExt(kind: ?[*:0]const u8, flags: DragDropFlags) callconv(.Inline) ?*const Payload {
+pub inline fn AcceptDragDropPayloadExt(kind: ?[*:0]const u8, flags: DragDropFlags) ?*const Payload {
     return raw.igAcceptDragDropPayload(kind, flags.toInt());
 }
-pub fn AcceptDragDropPayload(kind: ?[*:0]const u8) callconv(.Inline) ?*const Payload {
+pub inline fn AcceptDragDropPayload(kind: ?[*:0]const u8) ?*const Payload {
     return AcceptDragDropPayloadExt(kind, .{});
 }
 
@@ -3267,40 +3267,40 @@ pub const AlignTextToFramePadding = raw.igAlignTextToFramePadding;
 
 /// ArrowButton(str_id: ?[*:0]const u8, dir: Dir) bool
 pub const ArrowButton = raw.igArrowButton;
-pub fn BeginExt(name: ?[*:0]const u8, p_open: ?*bool, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginExt(name: ?[*:0]const u8, p_open: ?*bool, flags: WindowFlags) bool {
     return raw.igBegin(name, p_open, flags.toInt());
 }
-pub fn Begin(name: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn Begin(name: ?[*:0]const u8) bool {
     return BeginExt(name, null, .{});
 }
-pub fn BeginChildStrExt(str_id: ?[*:0]const u8, size: Vec2, border: bool, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginChildStrExt(str_id: ?[*:0]const u8, size: Vec2, border: bool, flags: WindowFlags) bool {
     return raw.igBeginChildStr(str_id, size, border, flags.toInt());
 }
-pub fn BeginChildStr(str_id: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginChildStr(str_id: ?[*:0]const u8) bool {
     return BeginChildStrExt(str_id, .{ .x = 0, .y = 0 }, false, .{});
 }
-pub fn BeginChildIDExt(id: ID, size: Vec2, border: bool, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginChildIDExt(id: ID, size: Vec2, border: bool, flags: WindowFlags) bool {
     return raw.igBeginChildID(id, size, border, flags.toInt());
 }
-pub fn BeginChildID(id: ID) callconv(.Inline) bool {
+pub inline fn BeginChildID(id: ID) bool {
     return BeginChildIDExt(id, .{ .x = 0, .y = 0 }, false, .{});
 }
-pub fn BeginChildFrameExt(id: ID, size: Vec2, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginChildFrameExt(id: ID, size: Vec2, flags: WindowFlags) bool {
     return raw.igBeginChildFrame(id, size, flags.toInt());
 }
-pub fn BeginChildFrame(id: ID, size: Vec2) callconv(.Inline) bool {
+pub inline fn BeginChildFrame(id: ID, size: Vec2) bool {
     return BeginChildFrameExt(id, size, .{});
 }
-pub fn BeginComboExt(label: ?[*:0]const u8, preview_value: ?[*:0]const u8, flags: ComboFlags) callconv(.Inline) bool {
+pub inline fn BeginComboExt(label: ?[*:0]const u8, preview_value: ?[*:0]const u8, flags: ComboFlags) bool {
     return raw.igBeginCombo(label, preview_value, flags.toInt());
 }
-pub fn BeginCombo(label: ?[*:0]const u8, preview_value: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginCombo(label: ?[*:0]const u8, preview_value: ?[*:0]const u8) bool {
     return BeginComboExt(label, preview_value, .{});
 }
-pub fn BeginDragDropSourceExt(flags: DragDropFlags) callconv(.Inline) bool {
+pub inline fn BeginDragDropSourceExt(flags: DragDropFlags) bool {
     return raw.igBeginDragDropSource(flags.toInt());
 }
-pub fn BeginDragDropSource() callconv(.Inline) bool {
+pub inline fn BeginDragDropSource() bool {
     return BeginDragDropSourceExt(.{});
 }
 
@@ -3315,52 +3315,52 @@ pub const BeginMainMenuBar = raw.igBeginMainMenuBar;
 
 /// BeginMenuExt(label: ?[*:0]const u8, enabled: bool) bool
 pub const BeginMenuExt = raw.igBeginMenu;
-pub fn BeginMenu(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginMenu(label: ?[*:0]const u8) bool {
     return BeginMenuExt(label, true);
 }
 
 /// BeginMenuBar() bool
 pub const BeginMenuBar = raw.igBeginMenuBar;
-pub fn BeginPopupExt(str_id: ?[*:0]const u8, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginPopupExt(str_id: ?[*:0]const u8, flags: WindowFlags) bool {
     return raw.igBeginPopup(str_id, flags.toInt());
 }
-pub fn BeginPopup(str_id: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginPopup(str_id: ?[*:0]const u8) bool {
     return BeginPopupExt(str_id, .{});
 }
 
 /// BeginPopupContextItemExt(str_id: ?[*:0]const u8, mouse_button: MouseButton) bool
 pub const BeginPopupContextItemExt = raw.igBeginPopupContextItem;
-pub fn BeginPopupContextItem() callconv(.Inline) bool {
+pub inline fn BeginPopupContextItem() bool {
     return BeginPopupContextItemExt(null, .Right);
 }
 
 /// BeginPopupContextVoidExt(str_id: ?[*:0]const u8, mouse_button: MouseButton) bool
 pub const BeginPopupContextVoidExt = raw.igBeginPopupContextVoid;
-pub fn BeginPopupContextVoid() callconv(.Inline) bool {
+pub inline fn BeginPopupContextVoid() bool {
     return BeginPopupContextVoidExt(null, .Right);
 }
 
 /// BeginPopupContextWindowExt(str_id: ?[*:0]const u8, mouse_button: MouseButton, also_over_items: bool) bool
 pub const BeginPopupContextWindowExt = raw.igBeginPopupContextWindow;
-pub fn BeginPopupContextWindow() callconv(.Inline) bool {
+pub inline fn BeginPopupContextWindow() bool {
     return BeginPopupContextWindowExt(null, .Right, true);
 }
-pub fn BeginPopupModalExt(name: ?[*:0]const u8, p_open: ?*bool, flags: WindowFlags) callconv(.Inline) bool {
+pub inline fn BeginPopupModalExt(name: ?[*:0]const u8, p_open: ?*bool, flags: WindowFlags) bool {
     return raw.igBeginPopupModal(name, p_open, flags.toInt());
 }
-pub fn BeginPopupModal(name: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginPopupModal(name: ?[*:0]const u8) bool {
     return BeginPopupModalExt(name, null, .{});
 }
-pub fn BeginTabBarExt(str_id: ?[*:0]const u8, flags: TabBarFlags) callconv(.Inline) bool {
+pub inline fn BeginTabBarExt(str_id: ?[*:0]const u8, flags: TabBarFlags) bool {
     return raw.igBeginTabBar(str_id, flags.toInt());
 }
-pub fn BeginTabBar(str_id: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginTabBar(str_id: ?[*:0]const u8) bool {
     return BeginTabBarExt(str_id, .{});
 }
-pub fn BeginTabItemExt(label: ?[*:0]const u8, p_open: ?*bool, flags: TabItemFlags) callconv(.Inline) bool {
+pub inline fn BeginTabItemExt(label: ?[*:0]const u8, p_open: ?*bool, flags: TabItemFlags) bool {
     return raw.igBeginTabItem(label, p_open, flags.toInt());
 }
-pub fn BeginTabItem(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn BeginTabItem(label: ?[*:0]const u8) bool {
     return BeginTabItemExt(label, null, .{});
 }
 
@@ -3375,7 +3375,7 @@ pub const BulletText = raw.igBulletText;
 
 /// ButtonExt(label: ?[*:0]const u8, size: Vec2) bool
 pub const ButtonExt = raw.igButton;
-pub fn Button(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn Button(label: ?[*:0]const u8) bool {
     return ButtonExt(label, .{ .x = 0, .y = 0 });
 }
 
@@ -3384,24 +3384,24 @@ pub const CalcItemWidth = raw.igCalcItemWidth;
 
 /// CalcListClipping(items_count: i32, items_height: f32, out_items_display_start: *i32, out_items_display_end: *i32) void
 pub const CalcListClipping = raw.igCalcListClipping;
-pub fn CalcTextSizeExt(text: ?[*]const u8, text_end: ?[*]const u8, hide_text_after_double_hash: bool, wrap_width: f32) callconv(.Inline) Vec2 {
+pub inline fn CalcTextSizeExt(text: ?[*]const u8, text_end: ?[*]const u8, hide_text_after_double_hash: bool, wrap_width: f32) Vec2 {
     var out: Vec2 = undefined;
     raw.igCalcTextSize_nonUDT(&out, text, text_end, hide_text_after_double_hash, wrap_width);
     return out;
 }
-pub fn CalcTextSize(text: ?[*]const u8) callconv(.Inline) Vec2 {
+pub inline fn CalcTextSize(text: ?[*]const u8) Vec2 {
     return CalcTextSizeExt(text, null, false, -1.0);
 }
 
 /// CaptureKeyboardFromAppExt(want_capture_keyboard_value: bool) void
 pub const CaptureKeyboardFromAppExt = raw.igCaptureKeyboardFromApp;
-pub fn CaptureKeyboardFromApp() callconv(.Inline) void {
+pub inline fn CaptureKeyboardFromApp() void {
     return CaptureKeyboardFromAppExt(true);
 }
 
 /// CaptureMouseFromAppExt(want_capture_mouse_value: bool) void
 pub const CaptureMouseFromAppExt = raw.igCaptureMouseFromApp;
-pub fn CaptureMouseFromApp() callconv(.Inline) void {
+pub inline fn CaptureMouseFromApp() void {
     return CaptureMouseFromAppExt(true);
 }
 
@@ -3413,22 +3413,22 @@ pub const CheckboxFlags = raw.igCheckboxFlags;
 
 /// CloseCurrentPopup() void
 pub const CloseCurrentPopup = raw.igCloseCurrentPopup;
-pub fn CollapsingHeaderExt(label: ?[*:0]const u8, flags: TreeNodeFlags) callconv(.Inline) bool {
+pub inline fn CollapsingHeaderExt(label: ?[*:0]const u8, flags: TreeNodeFlags) bool {
     return raw.igCollapsingHeader(label, flags.toInt());
 }
-pub fn CollapsingHeader(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn CollapsingHeader(label: ?[*:0]const u8) bool {
     return CollapsingHeaderExt(label, .{});
 }
-pub fn CollapsingHeaderBoolPtrExt(label: ?[*:0]const u8, p_open: ?*bool, flags: TreeNodeFlags) callconv(.Inline) bool {
+pub inline fn CollapsingHeaderBoolPtrExt(label: ?[*:0]const u8, p_open: ?*bool, flags: TreeNodeFlags) bool {
     return raw.igCollapsingHeaderBoolPtr(label, p_open, flags.toInt());
 }
-pub fn CollapsingHeaderBoolPtr(label: ?[*:0]const u8, p_open: ?*bool) callconv(.Inline) bool {
+pub inline fn CollapsingHeaderBoolPtr(label: ?[*:0]const u8, p_open: ?*bool) bool {
     return CollapsingHeaderBoolPtrExt(label, p_open, .{});
 }
-pub fn ColorButtonExt(desc_id: ?[*:0]const u8, col: Vec4, flags: ColorEditFlags, size: Vec2) callconv(.Inline) bool {
+pub inline fn ColorButtonExt(desc_id: ?[*:0]const u8, col: Vec4, flags: ColorEditFlags, size: Vec2) bool {
     return raw.igColorButton(desc_id, col, flags.toInt(), size);
 }
-pub fn ColorButton(desc_id: ?[*:0]const u8, col: Vec4) callconv(.Inline) bool {
+pub inline fn ColorButton(desc_id: ?[*:0]const u8, col: Vec4) bool {
     return ColorButtonExt(desc_id, col, .{}, .{ .x = 0, .y = 0 });
 }
 
@@ -3440,63 +3440,63 @@ pub const ColorConvertHSVtoRGB = raw.igColorConvertHSVtoRGB;
 
 /// ColorConvertRGBtoHSV(r: f32, g: f32, b: f32, out_h: *f32, out_s: *f32, out_v: *f32) void
 pub const ColorConvertRGBtoHSV = raw.igColorConvertRGBtoHSV;
-pub fn ColorConvertU32ToFloat4(in: u32) callconv(.Inline) Vec4 {
+pub inline fn ColorConvertU32ToFloat4(in: u32) Vec4 {
     var out: Vec4 = undefined;
     raw.igColorConvertU32ToFloat4_nonUDT(&out, in);
     return out;
 }
-pub fn ColorEdit3Ext(label: ?[*:0]const u8, col: *[3]f32, flags: ColorEditFlags) callconv(.Inline) bool {
+pub inline fn ColorEdit3Ext(label: ?[*:0]const u8, col: *[3]f32, flags: ColorEditFlags) bool {
     return raw.igColorEdit3(label, col, flags.toInt());
 }
-pub fn ColorEdit3(label: ?[*:0]const u8, col: *[3]f32) callconv(.Inline) bool {
+pub inline fn ColorEdit3(label: ?[*:0]const u8, col: *[3]f32) bool {
     return ColorEdit3Ext(label, col, .{});
 }
-pub fn ColorEdit4Ext(label: ?[*:0]const u8, col: *[4]f32, flags: ColorEditFlags) callconv(.Inline) bool {
+pub inline fn ColorEdit4Ext(label: ?[*:0]const u8, col: *[4]f32, flags: ColorEditFlags) bool {
     return raw.igColorEdit4(label, col, flags.toInt());
 }
-pub fn ColorEdit4(label: ?[*:0]const u8, col: *[4]f32) callconv(.Inline) bool {
+pub inline fn ColorEdit4(label: ?[*:0]const u8, col: *[4]f32) bool {
     return ColorEdit4Ext(label, col, .{});
 }
-pub fn ColorPicker3Ext(label: ?[*:0]const u8, col: *[3]f32, flags: ColorEditFlags) callconv(.Inline) bool {
+pub inline fn ColorPicker3Ext(label: ?[*:0]const u8, col: *[3]f32, flags: ColorEditFlags) bool {
     return raw.igColorPicker3(label, col, flags.toInt());
 }
-pub fn ColorPicker3(label: ?[*:0]const u8, col: *[3]f32) callconv(.Inline) bool {
+pub inline fn ColorPicker3(label: ?[*:0]const u8, col: *[3]f32) bool {
     return ColorPicker3Ext(label, col, .{});
 }
-pub fn ColorPicker4Ext(label: ?[*:0]const u8, col: *[4]f32, flags: ColorEditFlags, ref_col: ?*const [4]f32) callconv(.Inline) bool {
+pub inline fn ColorPicker4Ext(label: ?[*:0]const u8, col: *[4]f32, flags: ColorEditFlags, ref_col: ?*const [4]f32) bool {
     return raw.igColorPicker4(label, col, flags.toInt(), ref_col);
 }
-pub fn ColorPicker4(label: ?[*:0]const u8, col: *[4]f32) callconv(.Inline) bool {
+pub inline fn ColorPicker4(label: ?[*:0]const u8, col: *[4]f32) bool {
     return ColorPicker4Ext(label, col, .{}, null);
 }
 
 /// ColumnsExt(count: i32, id: ?[*:0]const u8, border: bool) void
 pub const ColumnsExt = raw.igColumns;
-pub fn Columns() callconv(.Inline) void {
+pub inline fn Columns() void {
     return ColumnsExt(1, null, true);
 }
 
 /// ComboExt(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const[*:0]const u8, items_count: i32, popup_max_height_in_items: i32) bool
 pub const ComboExt = raw.igCombo;
-pub fn Combo(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const [*:0]const u8, items_count: i32) callconv(.Inline) bool {
+pub inline fn Combo(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const [*:0]const u8, items_count: i32) bool {
     return ComboExt(label, current_item, items, items_count, -1);
 }
 
 /// ComboStrExt(label: ?[*:0]const u8, current_item: ?*i32, items_separated_by_zeros: ?[*]const u8, popup_max_height_in_items: i32) bool
 pub const ComboStrExt = raw.igComboStr;
-pub fn ComboStr(label: ?[*:0]const u8, current_item: ?*i32, items_separated_by_zeros: ?[*]const u8) callconv(.Inline) bool {
+pub inline fn ComboStr(label: ?[*:0]const u8, current_item: ?*i32, items_separated_by_zeros: ?[*]const u8) bool {
     return ComboStrExt(label, current_item, items_separated_by_zeros, -1);
 }
 
 /// ComboFnPtrExt(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32, popup_max_height_in_items: i32) bool
 pub const ComboFnPtrExt = raw.igComboFnPtr;
-pub fn ComboFnPtr(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32) callconv(.Inline) bool {
+pub inline fn ComboFnPtr(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32) bool {
     return ComboFnPtrExt(label, current_item, items_getter, data, items_count, -1);
 }
 
 /// CreateContextExt(shared_font_atlas: ?*FontAtlas) ?*Context
 pub const CreateContextExt = raw.igCreateContext;
-pub fn CreateContext() callconv(.Inline) ?*Context {
+pub inline fn CreateContext() ?*Context {
     return CreateContextExt(null);
 }
 
@@ -3505,79 +3505,79 @@ pub const DebugCheckVersionAndDataLayout = raw.igDebugCheckVersionAndDataLayout;
 
 /// DestroyContextExt(ctx: ?*Context) void
 pub const DestroyContextExt = raw.igDestroyContext;
-pub fn DestroyContext() callconv(.Inline) void {
+pub inline fn DestroyContext() void {
     return DestroyContextExt(null);
 }
 
 /// DragFloatExt(label: ?[*:0]const u8, v: *f32, v_speed: f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const DragFloatExt = raw.igDragFloat;
-pub fn DragFloat(label: ?[*:0]const u8, v: *f32) callconv(.Inline) bool {
+pub inline fn DragFloat(label: ?[*:0]const u8, v: *f32) bool {
     return DragFloatExt(label, v, 1.0, 0.0, 0.0, "%.3f", 1.0);
 }
 
 /// DragFloat2Ext(label: ?[*:0]const u8, v: *[2]f32, v_speed: f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const DragFloat2Ext = raw.igDragFloat2;
-pub fn DragFloat2(label: ?[*:0]const u8, v: *[2]f32) callconv(.Inline) bool {
+pub inline fn DragFloat2(label: ?[*:0]const u8, v: *[2]f32) bool {
     return DragFloat2Ext(label, v, 1.0, 0.0, 0.0, "%.3f", 1.0);
 }
 
 /// DragFloat3Ext(label: ?[*:0]const u8, v: *[3]f32, v_speed: f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const DragFloat3Ext = raw.igDragFloat3;
-pub fn DragFloat3(label: ?[*:0]const u8, v: *[3]f32) callconv(.Inline) bool {
+pub inline fn DragFloat3(label: ?[*:0]const u8, v: *[3]f32) bool {
     return DragFloat3Ext(label, v, 1.0, 0.0, 0.0, "%.3f", 1.0);
 }
 
 /// DragFloat4Ext(label: ?[*:0]const u8, v: *[4]f32, v_speed: f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const DragFloat4Ext = raw.igDragFloat4;
-pub fn DragFloat4(label: ?[*:0]const u8, v: *[4]f32) callconv(.Inline) bool {
+pub inline fn DragFloat4(label: ?[*:0]const u8, v: *[4]f32) bool {
     return DragFloat4Ext(label, v, 1.0, 0.0, 0.0, "%.3f", 1.0);
 }
 
 /// DragFloatRange2Ext(label: ?[*:0]const u8, v_current_min: *f32, v_current_max: *f32, v_speed: f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, format_max: ?[*:0]const u8, power: f32) bool
 pub const DragFloatRange2Ext = raw.igDragFloatRange2;
-pub fn DragFloatRange2(label: ?[*:0]const u8, v_current_min: *f32, v_current_max: *f32) callconv(.Inline) bool {
+pub inline fn DragFloatRange2(label: ?[*:0]const u8, v_current_min: *f32, v_current_max: *f32) bool {
     return DragFloatRange2Ext(label, v_current_min, v_current_max, 1.0, 0.0, 0.0, "%.3f", null, 1.0);
 }
 
 /// DragIntExt(label: ?[*:0]const u8, v: *i32, v_speed: f32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const DragIntExt = raw.igDragInt;
-pub fn DragInt(label: ?[*:0]const u8, v: *i32) callconv(.Inline) bool {
+pub inline fn DragInt(label: ?[*:0]const u8, v: *i32) bool {
     return DragIntExt(label, v, 1.0, 0, 0, "%d");
 }
 
 /// DragInt2Ext(label: ?[*:0]const u8, v: *[2]i32, v_speed: f32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const DragInt2Ext = raw.igDragInt2;
-pub fn DragInt2(label: ?[*:0]const u8, v: *[2]i32) callconv(.Inline) bool {
+pub inline fn DragInt2(label: ?[*:0]const u8, v: *[2]i32) bool {
     return DragInt2Ext(label, v, 1.0, 0, 0, "%d");
 }
 
 /// DragInt3Ext(label: ?[*:0]const u8, v: *[3]i32, v_speed: f32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const DragInt3Ext = raw.igDragInt3;
-pub fn DragInt3(label: ?[*:0]const u8, v: *[3]i32) callconv(.Inline) bool {
+pub inline fn DragInt3(label: ?[*:0]const u8, v: *[3]i32) bool {
     return DragInt3Ext(label, v, 1.0, 0, 0, "%d");
 }
 
 /// DragInt4Ext(label: ?[*:0]const u8, v: *[4]i32, v_speed: f32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const DragInt4Ext = raw.igDragInt4;
-pub fn DragInt4(label: ?[*:0]const u8, v: *[4]i32) callconv(.Inline) bool {
+pub inline fn DragInt4(label: ?[*:0]const u8, v: *[4]i32) bool {
     return DragInt4Ext(label, v, 1.0, 0, 0, "%d");
 }
 
 /// DragIntRange2Ext(label: ?[*:0]const u8, v_current_min: *i32, v_current_max: *i32, v_speed: f32, v_min: i32, v_max: i32, format: ?[*:0]const u8, format_max: ?[*:0]const u8) bool
 pub const DragIntRange2Ext = raw.igDragIntRange2;
-pub fn DragIntRange2(label: ?[*:0]const u8, v_current_min: *i32, v_current_max: *i32) callconv(.Inline) bool {
+pub inline fn DragIntRange2(label: ?[*:0]const u8, v_current_min: *i32, v_current_max: *i32) bool {
     return DragIntRange2Ext(label, v_current_min, v_current_max, 1.0, 0, 0, "%d", null);
 }
 
 /// DragScalarExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, v_speed: f32, p_min: ?*const c_void, p_max: ?*const c_void, format: ?[*:0]const u8, power: f32) bool
 pub const DragScalarExt = raw.igDragScalar;
-pub fn DragScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, v_speed: f32) callconv(.Inline) bool {
+pub inline fn DragScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, v_speed: f32) bool {
     return DragScalarExt(label, data_type, p_data, v_speed, null, null, null, 1.0);
 }
 
 /// DragScalarNExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, v_speed: f32, p_min: ?*const c_void, p_max: ?*const c_void, format: ?[*:0]const u8, power: f32) bool
 pub const DragScalarNExt = raw.igDragScalarN;
-pub fn DragScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, v_speed: f32) callconv(.Inline) bool {
+pub inline fn DragScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, v_speed: f32) bool {
     return DragScalarNExt(label, data_type, p_data, components, v_speed, null, null, null, 1.0);
 }
 
@@ -3637,7 +3637,7 @@ pub const GetClipboardText = raw.igGetClipboardText;
 
 /// GetColorU32Ext(idx: Col, alpha_mul: f32) u32
 pub const GetColorU32Ext = raw.igGetColorU32;
-pub fn GetColorU32(idx: Col) callconv(.Inline) u32 {
+pub inline fn GetColorU32(idx: Col) u32 {
     return GetColorU32Ext(idx, 1.0);
 }
 
@@ -3652,24 +3652,24 @@ pub const GetColumnIndex = raw.igGetColumnIndex;
 
 /// GetColumnOffsetExt(column_index: i32) f32
 pub const GetColumnOffsetExt = raw.igGetColumnOffset;
-pub fn GetColumnOffset() callconv(.Inline) f32 {
+pub inline fn GetColumnOffset() f32 {
     return GetColumnOffsetExt(-1);
 }
 
 /// GetColumnWidthExt(column_index: i32) f32
 pub const GetColumnWidthExt = raw.igGetColumnWidth;
-pub fn GetColumnWidth() callconv(.Inline) f32 {
+pub inline fn GetColumnWidth() f32 {
     return GetColumnWidthExt(-1);
 }
 
 /// GetColumnsCount() i32
 pub const GetColumnsCount = raw.igGetColumnsCount;
-pub fn GetContentRegionAvail() callconv(.Inline) Vec2 {
+pub inline fn GetContentRegionAvail() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetContentRegionAvail_nonUDT(&out);
     return out;
 }
-pub fn GetContentRegionMax() callconv(.Inline) Vec2 {
+pub inline fn GetContentRegionMax() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetContentRegionMax_nonUDT(&out);
     return out;
@@ -3677,7 +3677,7 @@ pub fn GetContentRegionMax() callconv(.Inline) Vec2 {
 
 /// GetCurrentContext() ?*Context
 pub const GetCurrentContext = raw.igGetCurrentContext;
-pub fn GetCursorPos() callconv(.Inline) Vec2 {
+pub inline fn GetCursorPos() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetCursorPos_nonUDT(&out);
     return out;
@@ -3688,12 +3688,12 @@ pub const GetCursorPosX = raw.igGetCursorPosX;
 
 /// GetCursorPosY() f32
 pub const GetCursorPosY = raw.igGetCursorPosY;
-pub fn GetCursorScreenPos() callconv(.Inline) Vec2 {
+pub inline fn GetCursorScreenPos() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetCursorScreenPos_nonUDT(&out);
     return out;
 }
-pub fn GetCursorStartPos() callconv(.Inline) Vec2 {
+pub inline fn GetCursorStartPos() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetCursorStartPos_nonUDT(&out);
     return out;
@@ -3713,7 +3713,7 @@ pub const GetFont = raw.igGetFont;
 
 /// GetFontSize() f32
 pub const GetFontSize = raw.igGetFontSize;
-pub fn GetFontTexUvWhitePixel() callconv(.Inline) Vec2 {
+pub inline fn GetFontTexUvWhitePixel() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetFontTexUvWhitePixel_nonUDT(&out);
     return out;
@@ -3742,17 +3742,17 @@ pub const GetIDPtr = raw.igGetIDPtr;
 
 /// GetIO() *IO
 pub const GetIO = raw.igGetIO;
-pub fn GetItemRectMax() callconv(.Inline) Vec2 {
+pub inline fn GetItemRectMax() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetItemRectMax_nonUDT(&out);
     return out;
 }
-pub fn GetItemRectMin() callconv(.Inline) Vec2 {
+pub inline fn GetItemRectMin() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetItemRectMin_nonUDT(&out);
     return out;
 }
-pub fn GetItemRectSize() callconv(.Inline) Vec2 {
+pub inline fn GetItemRectSize() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetItemRectSize_nonUDT(&out);
     return out;
@@ -3766,20 +3766,20 @@ pub const GetKeyPressedAmount = raw.igGetKeyPressedAmount;
 
 /// GetMouseCursor() MouseCursor
 pub const GetMouseCursor = raw.igGetMouseCursor;
-pub fn GetMouseDragDeltaExt(button: MouseButton, lock_threshold: f32) callconv(.Inline) Vec2 {
+pub inline fn GetMouseDragDeltaExt(button: MouseButton, lock_threshold: f32) Vec2 {
     var out: Vec2 = undefined;
     raw.igGetMouseDragDelta_nonUDT(&out, button, lock_threshold);
     return out;
 }
-pub fn GetMouseDragDelta() callconv(.Inline) Vec2 {
+pub inline fn GetMouseDragDelta() Vec2 {
     return GetMouseDragDeltaExt(.Left, -1.0);
 }
-pub fn GetMousePos() callconv(.Inline) Vec2 {
+pub inline fn GetMousePos() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetMousePos_nonUDT(&out);
     return out;
 }
-pub fn GetMousePosOnOpeningCurrentPopup() callconv(.Inline) Vec2 {
+pub inline fn GetMousePosOnOpeningCurrentPopup() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetMousePosOnOpeningCurrentPopup_nonUDT(&out);
     return out;
@@ -3823,12 +3823,12 @@ pub const GetTreeNodeToLabelSpacing = raw.igGetTreeNodeToLabelSpacing;
 
 /// GetVersion() ?[*:0]const u8
 pub const GetVersion = raw.igGetVersion;
-pub fn GetWindowContentRegionMax() callconv(.Inline) Vec2 {
+pub inline fn GetWindowContentRegionMax() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetWindowContentRegionMax_nonUDT(&out);
     return out;
 }
-pub fn GetWindowContentRegionMin() callconv(.Inline) Vec2 {
+pub inline fn GetWindowContentRegionMin() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetWindowContentRegionMin_nonUDT(&out);
     return out;
@@ -3842,12 +3842,12 @@ pub const GetWindowDrawList = raw.igGetWindowDrawList;
 
 /// GetWindowHeight() f32
 pub const GetWindowHeight = raw.igGetWindowHeight;
-pub fn GetWindowPos() callconv(.Inline) Vec2 {
+pub inline fn GetWindowPos() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetWindowPos_nonUDT(&out);
     return out;
 }
-pub fn GetWindowSize() callconv(.Inline) Vec2 {
+pub inline fn GetWindowSize() Vec2 {
     var out: Vec2 = undefined;
     raw.igGetWindowSize_nonUDT(&out);
     return out;
@@ -3858,103 +3858,103 @@ pub const GetWindowWidth = raw.igGetWindowWidth;
 
 /// ImageExt(user_texture_id: TextureID, size: Vec2, uv0: Vec2, uv1: Vec2, tint_col: Vec4, border_col: Vec4) void
 pub const ImageExt = raw.igImage;
-pub fn Image(user_texture_id: TextureID, size: Vec2) callconv(.Inline) void {
+pub inline fn Image(user_texture_id: TextureID, size: Vec2) void {
     return ImageExt(user_texture_id, size, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, .{ .x = 1, .y = 1, .z = 1, .w = 1 }, .{ .x = 0, .y = 0, .z = 0, .w = 0 });
 }
 
 /// ImageButtonExt(user_texture_id: TextureID, size: Vec2, uv0: Vec2, uv1: Vec2, frame_padding: i32, bg_col: Vec4, tint_col: Vec4) bool
 pub const ImageButtonExt = raw.igImageButton;
-pub fn ImageButton(user_texture_id: TextureID, size: Vec2) callconv(.Inline) bool {
+pub inline fn ImageButton(user_texture_id: TextureID, size: Vec2) bool {
     return ImageButtonExt(user_texture_id, size, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = 1 }, -1, .{ .x = 0, .y = 0, .z = 0, .w = 0 }, .{ .x = 1, .y = 1, .z = 1, .w = 1 });
 }
 
 /// IndentExt(indent_w: f32) void
 pub const IndentExt = raw.igIndent;
-pub fn Indent() callconv(.Inline) void {
+pub inline fn Indent() void {
     return IndentExt(0.0);
 }
-pub fn InputDoubleExt(label: ?[*:0]const u8, v: *f64, step: f64, step_fast: f64, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputDoubleExt(label: ?[*:0]const u8, v: *f64, step: f64, step_fast: f64, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputDouble(label, v, step, step_fast, format, flags.toInt());
 }
-pub fn InputDouble(label: ?[*:0]const u8, v: *f64) callconv(.Inline) bool {
+pub inline fn InputDouble(label: ?[*:0]const u8, v: *f64) bool {
     return InputDoubleExt(label, v, 0.0, 0.0, "%.6f", .{});
 }
-pub fn InputFloatExt(label: ?[*:0]const u8, v: *f32, step: f32, step_fast: f32, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputFloatExt(label: ?[*:0]const u8, v: *f32, step: f32, step_fast: f32, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputFloat(label, v, step, step_fast, format, flags.toInt());
 }
-pub fn InputFloat(label: ?[*:0]const u8, v: *f32) callconv(.Inline) bool {
+pub inline fn InputFloat(label: ?[*:0]const u8, v: *f32) bool {
     return InputFloatExt(label, v, 0.0, 0.0, "%.3f", .{});
 }
-pub fn InputFloat2Ext(label: ?[*:0]const u8, v: *[2]f32, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputFloat2Ext(label: ?[*:0]const u8, v: *[2]f32, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputFloat2(label, v, format, flags.toInt());
 }
-pub fn InputFloat2(label: ?[*:0]const u8, v: *[2]f32) callconv(.Inline) bool {
+pub inline fn InputFloat2(label: ?[*:0]const u8, v: *[2]f32) bool {
     return InputFloat2Ext(label, v, "%.3f", .{});
 }
-pub fn InputFloat3Ext(label: ?[*:0]const u8, v: *[3]f32, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputFloat3Ext(label: ?[*:0]const u8, v: *[3]f32, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputFloat3(label, v, format, flags.toInt());
 }
-pub fn InputFloat3(label: ?[*:0]const u8, v: *[3]f32) callconv(.Inline) bool {
+pub inline fn InputFloat3(label: ?[*:0]const u8, v: *[3]f32) bool {
     return InputFloat3Ext(label, v, "%.3f", .{});
 }
-pub fn InputFloat4Ext(label: ?[*:0]const u8, v: *[4]f32, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputFloat4Ext(label: ?[*:0]const u8, v: *[4]f32, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputFloat4(label, v, format, flags.toInt());
 }
-pub fn InputFloat4(label: ?[*:0]const u8, v: *[4]f32) callconv(.Inline) bool {
+pub inline fn InputFloat4(label: ?[*:0]const u8, v: *[4]f32) bool {
     return InputFloat4Ext(label, v, "%.3f", .{});
 }
-pub fn InputIntExt(label: ?[*:0]const u8, v: *i32, step: i32, step_fast: i32, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputIntExt(label: ?[*:0]const u8, v: *i32, step: i32, step_fast: i32, flags: InputTextFlags) bool {
     return raw.igInputInt(label, v, step, step_fast, flags.toInt());
 }
-pub fn InputInt(label: ?[*:0]const u8, v: *i32) callconv(.Inline) bool {
+pub inline fn InputInt(label: ?[*:0]const u8, v: *i32) bool {
     return InputIntExt(label, v, 1, 100, .{});
 }
-pub fn InputInt2Ext(label: ?[*:0]const u8, v: *[2]i32, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputInt2Ext(label: ?[*:0]const u8, v: *[2]i32, flags: InputTextFlags) bool {
     return raw.igInputInt2(label, v, flags.toInt());
 }
-pub fn InputInt2(label: ?[*:0]const u8, v: *[2]i32) callconv(.Inline) bool {
+pub inline fn InputInt2(label: ?[*:0]const u8, v: *[2]i32) bool {
     return InputInt2Ext(label, v, .{});
 }
-pub fn InputInt3Ext(label: ?[*:0]const u8, v: *[3]i32, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputInt3Ext(label: ?[*:0]const u8, v: *[3]i32, flags: InputTextFlags) bool {
     return raw.igInputInt3(label, v, flags.toInt());
 }
-pub fn InputInt3(label: ?[*:0]const u8, v: *[3]i32) callconv(.Inline) bool {
+pub inline fn InputInt3(label: ?[*:0]const u8, v: *[3]i32) bool {
     return InputInt3Ext(label, v, .{});
 }
-pub fn InputInt4Ext(label: ?[*:0]const u8, v: *[4]i32, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputInt4Ext(label: ?[*:0]const u8, v: *[4]i32, flags: InputTextFlags) bool {
     return raw.igInputInt4(label, v, flags.toInt());
 }
-pub fn InputInt4(label: ?[*:0]const u8, v: *[4]i32) callconv(.Inline) bool {
+pub inline fn InputInt4(label: ?[*:0]const u8, v: *[4]i32) bool {
     return InputInt4Ext(label, v, .{});
 }
-pub fn InputScalarExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, p_step: ?*const c_void, p_step_fast: ?*const c_void, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputScalarExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, p_step: ?*const c_void, p_step_fast: ?*const c_void, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputScalar(label, data_type, p_data, p_step, p_step_fast, format, flags.toInt());
 }
-pub fn InputScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void) callconv(.Inline) bool {
+pub inline fn InputScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void) bool {
     return InputScalarExt(label, data_type, p_data, null, null, null, .{});
 }
-pub fn InputScalarNExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, p_step: ?*const c_void, p_step_fast: ?*const c_void, format: ?[*:0]const u8, flags: InputTextFlags) callconv(.Inline) bool {
+pub inline fn InputScalarNExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, p_step: ?*const c_void, p_step_fast: ?*const c_void, format: ?[*:0]const u8, flags: InputTextFlags) bool {
     return raw.igInputScalarN(label, data_type, p_data, components, p_step, p_step_fast, format, flags.toInt());
 }
-pub fn InputScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32) callconv(.Inline) bool {
+pub inline fn InputScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32) bool {
     return InputScalarNExt(label, data_type, p_data, components, null, null, null, .{});
 }
-pub fn InputTextExt(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) callconv(.Inline) bool {
+pub inline fn InputTextExt(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) bool {
     return raw.igInputText(label, buf, buf_size, flags.toInt(), callback, user_data);
 }
-pub fn InputText(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) callconv(.Inline) bool {
+pub inline fn InputText(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) bool {
     return InputTextExt(label, buf, buf_size, .{}, null, null);
 }
-pub fn InputTextMultilineExt(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, size: Vec2, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) callconv(.Inline) bool {
+pub inline fn InputTextMultilineExt(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, size: Vec2, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) bool {
     return raw.igInputTextMultiline(label, buf, buf_size, size, flags.toInt(), callback, user_data);
 }
-pub fn InputTextMultiline(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) callconv(.Inline) bool {
+pub inline fn InputTextMultiline(label: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) bool {
     return InputTextMultilineExt(label, buf, buf_size, .{ .x = 0, .y = 0 }, .{}, null, null);
 }
-pub fn InputTextWithHintExt(label: ?[*:0]const u8, hint: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) callconv(.Inline) bool {
+pub inline fn InputTextWithHintExt(label: ?[*:0]const u8, hint: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize, flags: InputTextFlags, callback: InputTextCallback, user_data: ?*c_void) bool {
     return raw.igInputTextWithHint(label, hint, buf, buf_size, flags.toInt(), callback, user_data);
 }
-pub fn InputTextWithHint(label: ?[*:0]const u8, hint: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) callconv(.Inline) bool {
+pub inline fn InputTextWithHint(label: ?[*:0]const u8, hint: ?[*:0]const u8, buf: ?[*]u8, buf_size: usize) bool {
     return InputTextWithHintExt(label, hint, buf, buf_size, .{}, null, null);
 }
 
@@ -3981,7 +3981,7 @@ pub const IsItemActive = raw.igIsItemActive;
 
 /// IsItemClickedExt(mouse_button: MouseButton) bool
 pub const IsItemClickedExt = raw.igIsItemClicked;
-pub fn IsItemClicked() callconv(.Inline) bool {
+pub inline fn IsItemClicked() bool {
     return IsItemClickedExt(.Left);
 }
 
@@ -3996,10 +3996,10 @@ pub const IsItemEdited = raw.igIsItemEdited;
 
 /// IsItemFocused() bool
 pub const IsItemFocused = raw.igIsItemFocused;
-pub fn IsItemHoveredExt(flags: HoveredFlags) callconv(.Inline) bool {
+pub inline fn IsItemHoveredExt(flags: HoveredFlags) bool {
     return raw.igIsItemHovered(flags.toInt());
 }
-pub fn IsItemHovered() callconv(.Inline) bool {
+pub inline fn IsItemHovered() bool {
     return IsItemHoveredExt(.{});
 }
 
@@ -4014,7 +4014,7 @@ pub const IsKeyDown = raw.igIsKeyDown;
 
 /// IsKeyPressedExt(user_key_index: i32, repeat: bool) bool
 pub const IsKeyPressedExt = raw.igIsKeyPressed;
-pub fn IsKeyPressed(user_key_index: i32) callconv(.Inline) bool {
+pub inline fn IsKeyPressed(user_key_index: i32) bool {
     return IsKeyPressedExt(user_key_index, true);
 }
 
@@ -4023,7 +4023,7 @@ pub const IsKeyReleased = raw.igIsKeyReleased;
 
 /// IsMouseClickedExt(button: MouseButton, repeat: bool) bool
 pub const IsMouseClickedExt = raw.igIsMouseClicked;
-pub fn IsMouseClicked(button: MouseButton) callconv(.Inline) bool {
+pub inline fn IsMouseClicked(button: MouseButton) bool {
     return IsMouseClickedExt(button, false);
 }
 
@@ -4035,19 +4035,19 @@ pub const IsMouseDown = raw.igIsMouseDown;
 
 /// IsMouseDraggingExt(button: MouseButton, lock_threshold: f32) bool
 pub const IsMouseDraggingExt = raw.igIsMouseDragging;
-pub fn IsMouseDragging(button: MouseButton) callconv(.Inline) bool {
+pub inline fn IsMouseDragging(button: MouseButton) bool {
     return IsMouseDraggingExt(button, -1.0);
 }
 
 /// IsMouseHoveringRectExt(r_min: Vec2, r_max: Vec2, clip: bool) bool
 pub const IsMouseHoveringRectExt = raw.igIsMouseHoveringRect;
-pub fn IsMouseHoveringRect(r_min: Vec2, r_max: Vec2) callconv(.Inline) bool {
+pub inline fn IsMouseHoveringRect(r_min: Vec2, r_max: Vec2) bool {
     return IsMouseHoveringRectExt(r_min, r_max, true);
 }
 
 /// IsMousePosValidExt(mouse_pos: ?*const Vec2) bool
 pub const IsMousePosValidExt = raw.igIsMousePosValid;
-pub fn IsMousePosValid() callconv(.Inline) bool {
+pub inline fn IsMousePosValid() bool {
     return IsMousePosValidExt(null);
 }
 
@@ -4068,16 +4068,16 @@ pub const IsWindowAppearing = raw.igIsWindowAppearing;
 
 /// IsWindowCollapsed() bool
 pub const IsWindowCollapsed = raw.igIsWindowCollapsed;
-pub fn IsWindowFocusedExt(flags: FocusedFlags) callconv(.Inline) bool {
+pub inline fn IsWindowFocusedExt(flags: FocusedFlags) bool {
     return raw.igIsWindowFocused(flags.toInt());
 }
-pub fn IsWindowFocused() callconv(.Inline) bool {
+pub inline fn IsWindowFocused() bool {
     return IsWindowFocusedExt(.{});
 }
-pub fn IsWindowHoveredExt(flags: HoveredFlags) callconv(.Inline) bool {
+pub inline fn IsWindowHoveredExt(flags: HoveredFlags) bool {
     return raw.igIsWindowHovered(flags.toInt());
 }
-pub fn IsWindowHovered() callconv(.Inline) bool {
+pub inline fn IsWindowHovered() bool {
     return IsWindowHoveredExt(.{});
 }
 
@@ -4086,13 +4086,13 @@ pub const LabelText = raw.igLabelText;
 
 /// ListBoxStr_arrExt(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const[*:0]const u8, items_count: i32, height_in_items: i32) bool
 pub const ListBoxStr_arrExt = raw.igListBoxStr_arr;
-pub fn ListBoxStr_arr(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const [*:0]const u8, items_count: i32) callconv(.Inline) bool {
+pub inline fn ListBoxStr_arr(label: ?[*:0]const u8, current_item: ?*i32, items: [*]const [*:0]const u8, items_count: i32) bool {
     return ListBoxStr_arrExt(label, current_item, items, items_count, -1);
 }
 
 /// ListBoxFnPtrExt(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32, height_in_items: i32) bool
 pub const ListBoxFnPtrExt = raw.igListBoxFnPtr;
-pub fn ListBoxFnPtr(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32) callconv(.Inline) bool {
+pub inline fn ListBoxFnPtr(label: ?[*:0]const u8, current_item: ?*i32, items_getter: ?fn (data: ?*c_void, idx: i32, out_text: *?[*:0]const u8) callconv(.C) bool, data: ?*c_void, items_count: i32) bool {
     return ListBoxFnPtrExt(label, current_item, items_getter, data, items_count, -1);
 }
 
@@ -4101,13 +4101,13 @@ pub const ListBoxFooter = raw.igListBoxFooter;
 
 /// ListBoxHeaderVec2Ext(label: ?[*:0]const u8, size: Vec2) bool
 pub const ListBoxHeaderVec2Ext = raw.igListBoxHeaderVec2;
-pub fn ListBoxHeaderVec2(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn ListBoxHeaderVec2(label: ?[*:0]const u8) bool {
     return ListBoxHeaderVec2Ext(label, .{ .x = 0, .y = 0 });
 }
 
 /// ListBoxHeaderIntExt(label: ?[*:0]const u8, items_count: i32, height_in_items: i32) bool
 pub const ListBoxHeaderIntExt = raw.igListBoxHeaderInt;
-pub fn ListBoxHeaderInt(label: ?[*:0]const u8, items_count: i32) callconv(.Inline) bool {
+pub inline fn ListBoxHeaderInt(label: ?[*:0]const u8, items_count: i32) bool {
     return ListBoxHeaderIntExt(label, items_count, -1);
 }
 
@@ -4116,7 +4116,7 @@ pub const LoadIniSettingsFromDisk = raw.igLoadIniSettingsFromDisk;
 
 /// LoadIniSettingsFromMemoryExt(ini_data: ?[*]const u8, ini_size: usize) void
 pub const LoadIniSettingsFromMemoryExt = raw.igLoadIniSettingsFromMemory;
-pub fn LoadIniSettingsFromMemory(ini_data: ?[*]const u8) callconv(.Inline) void {
+pub inline fn LoadIniSettingsFromMemory(ini_data: ?[*]const u8) void {
     return LoadIniSettingsFromMemoryExt(ini_data, 0);
 }
 
@@ -4131,19 +4131,19 @@ pub const LogText = raw.igLogText;
 
 /// LogToClipboardExt(auto_open_depth: i32) void
 pub const LogToClipboardExt = raw.igLogToClipboard;
-pub fn LogToClipboard() callconv(.Inline) void {
+pub inline fn LogToClipboard() void {
     return LogToClipboardExt(-1);
 }
 
 /// LogToFileExt(auto_open_depth: i32, filename: ?[*:0]const u8) void
 pub const LogToFileExt = raw.igLogToFile;
-pub fn LogToFile() callconv(.Inline) void {
+pub inline fn LogToFile() void {
     return LogToFileExt(-1, null);
 }
 
 /// LogToTTYExt(auto_open_depth: i32) void
 pub const LogToTTYExt = raw.igLogToTTY;
-pub fn LogToTTY() callconv(.Inline) void {
+pub inline fn LogToTTY() void {
     return LogToTTYExt(-1);
 }
 
@@ -4155,13 +4155,13 @@ pub const MemFree = raw.igMemFree;
 
 /// MenuItemBoolExt(label: ?[*:0]const u8, shortcut: ?[*:0]const u8, selected: bool, enabled: bool) bool
 pub const MenuItemBoolExt = raw.igMenuItemBool;
-pub fn MenuItemBool(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn MenuItemBool(label: ?[*:0]const u8) bool {
     return MenuItemBoolExt(label, null, false, true);
 }
 
 /// MenuItemBoolPtrExt(label: ?[*:0]const u8, shortcut: ?[*:0]const u8, p_selected: ?*bool, enabled: bool) bool
 pub const MenuItemBoolPtrExt = raw.igMenuItemBoolPtr;
-pub fn MenuItemBoolPtr(label: ?[*:0]const u8, shortcut: ?[*:0]const u8, p_selected: ?*bool) callconv(.Inline) bool {
+pub inline fn MenuItemBoolPtr(label: ?[*:0]const u8, shortcut: ?[*:0]const u8, p_selected: ?*bool) bool {
     return MenuItemBoolPtrExt(label, shortcut, p_selected, true);
 }
 
@@ -4179,31 +4179,31 @@ pub const OpenPopup = raw.igOpenPopup;
 
 /// OpenPopupOnItemClickExt(str_id: ?[*:0]const u8, mouse_button: MouseButton) bool
 pub const OpenPopupOnItemClickExt = raw.igOpenPopupOnItemClick;
-pub fn OpenPopupOnItemClick() callconv(.Inline) bool {
+pub inline fn OpenPopupOnItemClick() bool {
     return OpenPopupOnItemClickExt(null, .Right);
 }
 
 /// PlotHistogramFloatPtrExt(label: ?[*:0]const u8, values: *const f32, values_count: i32, values_offset: i32, overlay_text: ?[*:0]const u8, scale_min: f32, scale_max: f32, graph_size: Vec2, stride: i32) void
 pub const PlotHistogramFloatPtrExt = raw.igPlotHistogramFloatPtr;
-pub fn PlotHistogramFloatPtr(label: ?[*:0]const u8, values: *const f32, values_count: i32) callconv(.Inline) void {
+pub inline fn PlotHistogramFloatPtr(label: ?[*:0]const u8, values: *const f32, values_count: i32) void {
     return PlotHistogramFloatPtrExt(label, values, values_count, 0, null, FLT_MAX, FLT_MAX, .{ .x = 0, .y = 0 }, @sizeOf(f32));
 }
 
 /// PlotHistogramFnPtrExt(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32, values_offset: i32, overlay_text: ?[*:0]const u8, scale_min: f32, scale_max: f32, graph_size: Vec2) void
 pub const PlotHistogramFnPtrExt = raw.igPlotHistogramFnPtr;
-pub fn PlotHistogramFnPtr(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32) callconv(.Inline) void {
+pub inline fn PlotHistogramFnPtr(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32) void {
     return PlotHistogramFnPtrExt(label, values_getter, data, values_count, 0, null, FLT_MAX, FLT_MAX, .{ .x = 0, .y = 0 });
 }
 
 /// PlotLinesExt(label: ?[*:0]const u8, values: *const f32, values_count: i32, values_offset: i32, overlay_text: ?[*:0]const u8, scale_min: f32, scale_max: f32, graph_size: Vec2, stride: i32) void
 pub const PlotLinesExt = raw.igPlotLines;
-pub fn PlotLines(label: ?[*:0]const u8, values: *const f32, values_count: i32) callconv(.Inline) void {
+pub inline fn PlotLines(label: ?[*:0]const u8, values: *const f32, values_count: i32) void {
     return PlotLinesExt(label, values, values_count, 0, null, FLT_MAX, FLT_MAX, .{ .x = 0, .y = 0 }, @sizeOf(f32));
 }
 
 /// PlotLinesFnPtrExt(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32, values_offset: i32, overlay_text: ?[*:0]const u8, scale_min: f32, scale_max: f32, graph_size: Vec2) void
 pub const PlotLinesFnPtrExt = raw.igPlotLinesFnPtr;
-pub fn PlotLinesFnPtr(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32) callconv(.Inline) void {
+pub inline fn PlotLinesFnPtr(label: ?[*:0]const u8, values_getter: ?fn (data: ?*c_void, idx: i32) callconv(.C) f32, data: ?*c_void, values_count: i32) void {
     return PlotLinesFnPtrExt(label, values_getter, data, values_count, 0, null, FLT_MAX, FLT_MAX, .{ .x = 0, .y = 0 });
 }
 
@@ -4227,13 +4227,13 @@ pub const PopItemWidth = raw.igPopItemWidth;
 
 /// PopStyleColorExt(count: i32) void
 pub const PopStyleColorExt = raw.igPopStyleColor;
-pub fn PopStyleColor() callconv(.Inline) void {
+pub inline fn PopStyleColor() void {
     return PopStyleColorExt(1);
 }
 
 /// PopStyleVarExt(count: i32) void
 pub const PopStyleVarExt = raw.igPopStyleVar;
-pub fn PopStyleVar() callconv(.Inline) void {
+pub inline fn PopStyleVar() void {
     return PopStyleVarExt(1);
 }
 
@@ -4242,7 +4242,7 @@ pub const PopTextWrapPos = raw.igPopTextWrapPos;
 
 /// ProgressBarExt(fraction: f32, size_arg: Vec2, overlay: ?[*:0]const u8) void
 pub const ProgressBarExt = raw.igProgressBar;
-pub fn ProgressBar(fraction: f32) callconv(.Inline) void {
+pub inline fn ProgressBar(fraction: f32) void {
     return ProgressBarExt(fraction, .{ .x = -1, .y = 0 }, null);
 }
 
@@ -4287,7 +4287,7 @@ pub const PushStyleVarVec2 = raw.igPushStyleVarVec2;
 
 /// PushTextWrapPosExt(wrap_local_pos_x: f32) void
 pub const PushTextWrapPosExt = raw.igPushTextWrapPos;
-pub fn PushTextWrapPos() callconv(.Inline) void {
+pub inline fn PushTextWrapPos() void {
     return PushTextWrapPosExt(0.0);
 }
 
@@ -4302,13 +4302,13 @@ pub const Render = raw.igRender;
 
 /// ResetMouseDragDeltaExt(button: MouseButton) void
 pub const ResetMouseDragDeltaExt = raw.igResetMouseDragDelta;
-pub fn ResetMouseDragDelta() callconv(.Inline) void {
+pub inline fn ResetMouseDragDelta() void {
     return ResetMouseDragDeltaExt(.Left);
 }
 
 /// SameLineExt(offset_from_start_x: f32, spacing: f32) void
 pub const SameLineExt = raw.igSameLine;
-pub fn SameLine() callconv(.Inline) void {
+pub inline fn SameLine() void {
     return SameLineExt(0.0, -1.0);
 }
 
@@ -4317,19 +4317,19 @@ pub const SaveIniSettingsToDisk = raw.igSaveIniSettingsToDisk;
 
 /// SaveIniSettingsToMemoryExt(out_ini_size: ?*usize) ?[*:0]const u8
 pub const SaveIniSettingsToMemoryExt = raw.igSaveIniSettingsToMemory;
-pub fn SaveIniSettingsToMemory() callconv(.Inline) ?[*:0]const u8 {
+pub inline fn SaveIniSettingsToMemory() ?[*:0]const u8 {
     return SaveIniSettingsToMemoryExt(null);
 }
-pub fn SelectableBoolExt(label: ?[*:0]const u8, selected: bool, flags: SelectableFlags, size: Vec2) callconv(.Inline) bool {
+pub inline fn SelectableBoolExt(label: ?[*:0]const u8, selected: bool, flags: SelectableFlags, size: Vec2) bool {
     return raw.igSelectableBool(label, selected, flags.toInt(), size);
 }
-pub fn SelectableBool(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn SelectableBool(label: ?[*:0]const u8) bool {
     return SelectableBoolExt(label, false, .{}, .{ .x = 0, .y = 0 });
 }
-pub fn SelectableBoolPtrExt(label: ?[*:0]const u8, p_selected: ?*bool, flags: SelectableFlags, size: Vec2) callconv(.Inline) bool {
+pub inline fn SelectableBoolPtrExt(label: ?[*:0]const u8, p_selected: ?*bool, flags: SelectableFlags, size: Vec2) bool {
     return raw.igSelectableBoolPtr(label, p_selected, flags.toInt(), size);
 }
-pub fn SelectableBoolPtr(label: ?[*:0]const u8, p_selected: ?*bool) callconv(.Inline) bool {
+pub inline fn SelectableBoolPtr(label: ?[*:0]const u8, p_selected: ?*bool) bool {
     return SelectableBoolPtrExt(label, p_selected, .{}, .{ .x = 0, .y = 0 });
 }
 
@@ -4338,13 +4338,13 @@ pub const Separator = raw.igSeparator;
 
 /// SetAllocatorFunctionsExt(alloc_func: ?fn (sz: usize, user_data: ?*c_void) callconv(.C) ?*c_void, free_func: ?fn (ptr: ?*c_void, user_data: ?*c_void) callconv(.C) void, user_data: ?*c_void) void
 pub const SetAllocatorFunctionsExt = raw.igSetAllocatorFunctions;
-pub fn SetAllocatorFunctions(alloc_func: ?fn (sz: usize, user_data: ?*c_void) callconv(.C) ?*c_void, free_func: ?fn (ptr: ?*c_void, user_data: ?*c_void) callconv(.C) void) callconv(.Inline) void {
+pub inline fn SetAllocatorFunctions(alloc_func: ?fn (sz: usize, user_data: ?*c_void) callconv(.C) ?*c_void, free_func: ?fn (ptr: ?*c_void, user_data: ?*c_void) callconv(.C) void) void {
     return SetAllocatorFunctionsExt(alloc_func, free_func, null);
 }
 
 /// SetClipboardText(text: ?[*:0]const u8) void
 pub const SetClipboardText = raw.igSetClipboardText;
-pub fn SetColorEditOptions(flags: ColorEditFlags) callconv(.Inline) void {
+pub inline fn SetColorEditOptions(flags: ColorEditFlags) void {
     return raw.igSetColorEditOptions(flags.toInt());
 }
 
@@ -4368,10 +4368,10 @@ pub const SetCursorPosY = raw.igSetCursorPosY;
 
 /// SetCursorScreenPos(pos: Vec2) void
 pub const SetCursorScreenPos = raw.igSetCursorScreenPos;
-pub fn SetDragDropPayloadExt(kind: ?[*:0]const u8, data: ?*const c_void, sz: usize, cond: CondFlags) callconv(.Inline) bool {
+pub inline fn SetDragDropPayloadExt(kind: ?[*:0]const u8, data: ?*const c_void, sz: usize, cond: CondFlags) bool {
     return raw.igSetDragDropPayload(kind, data, sz, cond.toInt());
 }
-pub fn SetDragDropPayload(kind: ?[*:0]const u8, data: ?*const c_void, sz: usize) callconv(.Inline) bool {
+pub inline fn SetDragDropPayload(kind: ?[*:0]const u8, data: ?*const c_void, sz: usize) bool {
     return SetDragDropPayloadExt(kind, data, sz, .{});
 }
 
@@ -4383,16 +4383,16 @@ pub const SetItemDefaultFocus = raw.igSetItemDefaultFocus;
 
 /// SetKeyboardFocusHereExt(offset: i32) void
 pub const SetKeyboardFocusHereExt = raw.igSetKeyboardFocusHere;
-pub fn SetKeyboardFocusHere() callconv(.Inline) void {
+pub inline fn SetKeyboardFocusHere() void {
     return SetKeyboardFocusHereExt(0);
 }
 
 /// SetMouseCursor(cursor_type: MouseCursor) void
 pub const SetMouseCursor = raw.igSetMouseCursor;
-pub fn SetNextItemOpenExt(is_open: bool, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetNextItemOpenExt(is_open: bool, cond: CondFlags) void {
     return raw.igSetNextItemOpen(is_open, cond.toInt());
 }
-pub fn SetNextItemOpen(is_open: bool) callconv(.Inline) void {
+pub inline fn SetNextItemOpen(is_open: bool) void {
     return SetNextItemOpenExt(is_open, .{});
 }
 
@@ -4401,10 +4401,10 @@ pub const SetNextItemWidth = raw.igSetNextItemWidth;
 
 /// SetNextWindowBgAlpha(alpha: f32) void
 pub const SetNextWindowBgAlpha = raw.igSetNextWindowBgAlpha;
-pub fn SetNextWindowCollapsedExt(collapsed: bool, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetNextWindowCollapsedExt(collapsed: bool, cond: CondFlags) void {
     return raw.igSetNextWindowCollapsed(collapsed, cond.toInt());
 }
-pub fn SetNextWindowCollapsed(collapsed: bool) callconv(.Inline) void {
+pub inline fn SetNextWindowCollapsed(collapsed: bool) void {
     return SetNextWindowCollapsedExt(collapsed, .{});
 }
 
@@ -4413,46 +4413,46 @@ pub const SetNextWindowContentSize = raw.igSetNextWindowContentSize;
 
 /// SetNextWindowFocus() void
 pub const SetNextWindowFocus = raw.igSetNextWindowFocus;
-pub fn SetNextWindowPosExt(pos: Vec2, cond: CondFlags, pivot: Vec2) callconv(.Inline) void {
+pub inline fn SetNextWindowPosExt(pos: Vec2, cond: CondFlags, pivot: Vec2) void {
     return raw.igSetNextWindowPos(pos, cond.toInt(), pivot);
 }
-pub fn SetNextWindowPos(pos: Vec2) callconv(.Inline) void {
+pub inline fn SetNextWindowPos(pos: Vec2) void {
     return SetNextWindowPosExt(pos, .{}, .{ .x = 0, .y = 0 });
 }
-pub fn SetNextWindowSizeExt(size: Vec2, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetNextWindowSizeExt(size: Vec2, cond: CondFlags) void {
     return raw.igSetNextWindowSize(size, cond.toInt());
 }
-pub fn SetNextWindowSize(size: Vec2) callconv(.Inline) void {
+pub inline fn SetNextWindowSize(size: Vec2) void {
     return SetNextWindowSizeExt(size, .{});
 }
 
 /// SetNextWindowSizeConstraintsExt(size_min: Vec2, size_max: Vec2, custom_callback: SizeCallback, custom_callback_data: ?*c_void) void
 pub const SetNextWindowSizeConstraintsExt = raw.igSetNextWindowSizeConstraints;
-pub fn SetNextWindowSizeConstraints(size_min: Vec2, size_max: Vec2) callconv(.Inline) void {
+pub inline fn SetNextWindowSizeConstraints(size_min: Vec2, size_max: Vec2) void {
     return SetNextWindowSizeConstraintsExt(size_min, size_max, null, null);
 }
 
 /// SetScrollFromPosXExt(local_x: f32, center_x_ratio: f32) void
 pub const SetScrollFromPosXExt = raw.igSetScrollFromPosX;
-pub fn SetScrollFromPosX(local_x: f32) callconv(.Inline) void {
+pub inline fn SetScrollFromPosX(local_x: f32) void {
     return SetScrollFromPosXExt(local_x, 0.5);
 }
 
 /// SetScrollFromPosYExt(local_y: f32, center_y_ratio: f32) void
 pub const SetScrollFromPosYExt = raw.igSetScrollFromPosY;
-pub fn SetScrollFromPosY(local_y: f32) callconv(.Inline) void {
+pub inline fn SetScrollFromPosY(local_y: f32) void {
     return SetScrollFromPosYExt(local_y, 0.5);
 }
 
 /// SetScrollHereXExt(center_x_ratio: f32) void
 pub const SetScrollHereXExt = raw.igSetScrollHereX;
-pub fn SetScrollHereX() callconv(.Inline) void {
+pub inline fn SetScrollHereX() void {
     return SetScrollHereXExt(0.5);
 }
 
 /// SetScrollHereYExt(center_y_ratio: f32) void
 pub const SetScrollHereYExt = raw.igSetScrollHereY;
-pub fn SetScrollHereY() callconv(.Inline) void {
+pub inline fn SetScrollHereY() void {
     return SetScrollHereYExt(0.5);
 }
 
@@ -4470,16 +4470,16 @@ pub const SetTabItemClosed = raw.igSetTabItemClosed;
 
 /// SetTooltip(fmt: ?[*:0]const u8, ...: ...) void
 pub const SetTooltip = raw.igSetTooltip;
-pub fn SetWindowCollapsedBoolExt(collapsed: bool, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowCollapsedBoolExt(collapsed: bool, cond: CondFlags) void {
     return raw.igSetWindowCollapsedBool(collapsed, cond.toInt());
 }
-pub fn SetWindowCollapsedBool(collapsed: bool) callconv(.Inline) void {
+pub inline fn SetWindowCollapsedBool(collapsed: bool) void {
     return SetWindowCollapsedBoolExt(collapsed, .{});
 }
-pub fn SetWindowCollapsedStrExt(name: ?[*:0]const u8, collapsed: bool, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowCollapsedStrExt(name: ?[*:0]const u8, collapsed: bool, cond: CondFlags) void {
     return raw.igSetWindowCollapsedStr(name, collapsed, cond.toInt());
 }
-pub fn SetWindowCollapsedStr(name: ?[*:0]const u8, collapsed: bool) callconv(.Inline) void {
+pub inline fn SetWindowCollapsedStr(name: ?[*:0]const u8, collapsed: bool) void {
     return SetWindowCollapsedStrExt(name, collapsed, .{});
 }
 
@@ -4491,40 +4491,40 @@ pub const SetWindowFocusStr = raw.igSetWindowFocusStr;
 
 /// SetWindowFontScale(scale: f32) void
 pub const SetWindowFontScale = raw.igSetWindowFontScale;
-pub fn SetWindowPosVec2Ext(pos: Vec2, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowPosVec2Ext(pos: Vec2, cond: CondFlags) void {
     return raw.igSetWindowPosVec2(pos, cond.toInt());
 }
-pub fn SetWindowPosVec2(pos: Vec2) callconv(.Inline) void {
+pub inline fn SetWindowPosVec2(pos: Vec2) void {
     return SetWindowPosVec2Ext(pos, .{});
 }
-pub fn SetWindowPosStrExt(name: ?[*:0]const u8, pos: Vec2, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowPosStrExt(name: ?[*:0]const u8, pos: Vec2, cond: CondFlags) void {
     return raw.igSetWindowPosStr(name, pos, cond.toInt());
 }
-pub fn SetWindowPosStr(name: ?[*:0]const u8, pos: Vec2) callconv(.Inline) void {
+pub inline fn SetWindowPosStr(name: ?[*:0]const u8, pos: Vec2) void {
     return SetWindowPosStrExt(name, pos, .{});
 }
-pub fn SetWindowSizeVec2Ext(size: Vec2, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowSizeVec2Ext(size: Vec2, cond: CondFlags) void {
     return raw.igSetWindowSizeVec2(size, cond.toInt());
 }
-pub fn SetWindowSizeVec2(size: Vec2) callconv(.Inline) void {
+pub inline fn SetWindowSizeVec2(size: Vec2) void {
     return SetWindowSizeVec2Ext(size, .{});
 }
-pub fn SetWindowSizeStrExt(name: ?[*:0]const u8, size: Vec2, cond: CondFlags) callconv(.Inline) void {
+pub inline fn SetWindowSizeStrExt(name: ?[*:0]const u8, size: Vec2, cond: CondFlags) void {
     return raw.igSetWindowSizeStr(name, size, cond.toInt());
 }
-pub fn SetWindowSizeStr(name: ?[*:0]const u8, size: Vec2) callconv(.Inline) void {
+pub inline fn SetWindowSizeStr(name: ?[*:0]const u8, size: Vec2) void {
     return SetWindowSizeStrExt(name, size, .{});
 }
 
 /// ShowAboutWindowExt(p_open: ?*bool) void
 pub const ShowAboutWindowExt = raw.igShowAboutWindow;
-pub fn ShowAboutWindow() callconv(.Inline) void {
+pub inline fn ShowAboutWindow() void {
     return ShowAboutWindowExt(null);
 }
 
 /// ShowDemoWindowExt(p_open: ?*bool) void
 pub const ShowDemoWindowExt = raw.igShowDemoWindow;
-pub fn ShowDemoWindow() callconv(.Inline) void {
+pub inline fn ShowDemoWindow() void {
     return ShowDemoWindowExt(null);
 }
 
@@ -4533,13 +4533,13 @@ pub const ShowFontSelector = raw.igShowFontSelector;
 
 /// ShowMetricsWindowExt(p_open: ?*bool) void
 pub const ShowMetricsWindowExt = raw.igShowMetricsWindow;
-pub fn ShowMetricsWindow() callconv(.Inline) void {
+pub inline fn ShowMetricsWindow() void {
     return ShowMetricsWindowExt(null);
 }
 
 /// ShowStyleEditorExt(ref: ?*Style) void
 pub const ShowStyleEditorExt = raw.igShowStyleEditor;
-pub fn ShowStyleEditor() callconv(.Inline) void {
+pub inline fn ShowStyleEditor() void {
     return ShowStyleEditorExt(null);
 }
 
@@ -4551,67 +4551,67 @@ pub const ShowUserGuide = raw.igShowUserGuide;
 
 /// SliderAngleExt(label: ?[*:0]const u8, v_rad: *f32, v_degrees_min: f32, v_degrees_max: f32, format: ?[*:0]const u8) bool
 pub const SliderAngleExt = raw.igSliderAngle;
-pub fn SliderAngle(label: ?[*:0]const u8, v_rad: *f32) callconv(.Inline) bool {
+pub inline fn SliderAngle(label: ?[*:0]const u8, v_rad: *f32) bool {
     return SliderAngleExt(label, v_rad, -360.0, 360.0, "%.0f deg");
 }
 
 /// SliderFloatExt(label: ?[*:0]const u8, v: *f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const SliderFloatExt = raw.igSliderFloat;
-pub fn SliderFloat(label: ?[*:0]const u8, v: *f32, v_min: f32, v_max: f32) callconv(.Inline) bool {
+pub inline fn SliderFloat(label: ?[*:0]const u8, v: *f32, v_min: f32, v_max: f32) bool {
     return SliderFloatExt(label, v, v_min, v_max, "%.3f", 1.0);
 }
 
 /// SliderFloat2Ext(label: ?[*:0]const u8, v: *[2]f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const SliderFloat2Ext = raw.igSliderFloat2;
-pub fn SliderFloat2(label: ?[*:0]const u8, v: *[2]f32, v_min: f32, v_max: f32) callconv(.Inline) bool {
+pub inline fn SliderFloat2(label: ?[*:0]const u8, v: *[2]f32, v_min: f32, v_max: f32) bool {
     return SliderFloat2Ext(label, v, v_min, v_max, "%.3f", 1.0);
 }
 
 /// SliderFloat3Ext(label: ?[*:0]const u8, v: *[3]f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const SliderFloat3Ext = raw.igSliderFloat3;
-pub fn SliderFloat3(label: ?[*:0]const u8, v: *[3]f32, v_min: f32, v_max: f32) callconv(.Inline) bool {
+pub inline fn SliderFloat3(label: ?[*:0]const u8, v: *[3]f32, v_min: f32, v_max: f32) bool {
     return SliderFloat3Ext(label, v, v_min, v_max, "%.3f", 1.0);
 }
 
 /// SliderFloat4Ext(label: ?[*:0]const u8, v: *[4]f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const SliderFloat4Ext = raw.igSliderFloat4;
-pub fn SliderFloat4(label: ?[*:0]const u8, v: *[4]f32, v_min: f32, v_max: f32) callconv(.Inline) bool {
+pub inline fn SliderFloat4(label: ?[*:0]const u8, v: *[4]f32, v_min: f32, v_max: f32) bool {
     return SliderFloat4Ext(label, v, v_min, v_max, "%.3f", 1.0);
 }
 
 /// SliderIntExt(label: ?[*:0]const u8, v: *i32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const SliderIntExt = raw.igSliderInt;
-pub fn SliderInt(label: ?[*:0]const u8, v: *i32, v_min: i32, v_max: i32) callconv(.Inline) bool {
+pub inline fn SliderInt(label: ?[*:0]const u8, v: *i32, v_min: i32, v_max: i32) bool {
     return SliderIntExt(label, v, v_min, v_max, "%d");
 }
 
 /// SliderInt2Ext(label: ?[*:0]const u8, v: *[2]i32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const SliderInt2Ext = raw.igSliderInt2;
-pub fn SliderInt2(label: ?[*:0]const u8, v: *[2]i32, v_min: i32, v_max: i32) callconv(.Inline) bool {
+pub inline fn SliderInt2(label: ?[*:0]const u8, v: *[2]i32, v_min: i32, v_max: i32) bool {
     return SliderInt2Ext(label, v, v_min, v_max, "%d");
 }
 
 /// SliderInt3Ext(label: ?[*:0]const u8, v: *[3]i32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const SliderInt3Ext = raw.igSliderInt3;
-pub fn SliderInt3(label: ?[*:0]const u8, v: *[3]i32, v_min: i32, v_max: i32) callconv(.Inline) bool {
+pub inline fn SliderInt3(label: ?[*:0]const u8, v: *[3]i32, v_min: i32, v_max: i32) bool {
     return SliderInt3Ext(label, v, v_min, v_max, "%d");
 }
 
 /// SliderInt4Ext(label: ?[*:0]const u8, v: *[4]i32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const SliderInt4Ext = raw.igSliderInt4;
-pub fn SliderInt4(label: ?[*:0]const u8, v: *[4]i32, v_min: i32, v_max: i32) callconv(.Inline) bool {
+pub inline fn SliderInt4(label: ?[*:0]const u8, v: *[4]i32, v_min: i32, v_max: i32) bool {
     return SliderInt4Ext(label, v, v_min, v_max, "%d");
 }
 
 /// SliderScalarExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void, format: ?[*:0]const u8, power: f32) bool
 pub const SliderScalarExt = raw.igSliderScalar;
-pub fn SliderScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void) callconv(.Inline) bool {
+pub inline fn SliderScalar(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void) bool {
     return SliderScalarExt(label, data_type, p_data, p_min, p_max, null, 1.0);
 }
 
 /// SliderScalarNExt(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, p_min: ?*const c_void, p_max: ?*const c_void, format: ?[*:0]const u8, power: f32) bool
 pub const SliderScalarNExt = raw.igSliderScalarN;
-pub fn SliderScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, p_min: ?*const c_void, p_max: ?*const c_void) callconv(.Inline) bool {
+pub inline fn SliderScalarN(label: ?[*:0]const u8, data_type: DataType, p_data: ?*c_void, components: i32, p_min: ?*const c_void, p_max: ?*const c_void) bool {
     return SliderScalarNExt(label, data_type, p_data, components, p_min, p_max, null, 1.0);
 }
 
@@ -4623,19 +4623,19 @@ pub const Spacing = raw.igSpacing;
 
 /// StyleColorsClassicExt(dst: ?*Style) void
 pub const StyleColorsClassicExt = raw.igStyleColorsClassic;
-pub fn StyleColorsClassic() callconv(.Inline) void {
+pub inline fn StyleColorsClassic() void {
     return StyleColorsClassicExt(null);
 }
 
 /// StyleColorsDarkExt(dst: ?*Style) void
 pub const StyleColorsDarkExt = raw.igStyleColorsDark;
-pub fn StyleColorsDark() callconv(.Inline) void {
+pub inline fn StyleColorsDark() void {
     return StyleColorsDarkExt(null);
 }
 
 /// StyleColorsLightExt(dst: ?*Style) void
 pub const StyleColorsLightExt = raw.igStyleColorsLight;
-pub fn StyleColorsLight() callconv(.Inline) void {
+pub inline fn StyleColorsLight() void {
     return StyleColorsLightExt(null);
 }
 
@@ -4650,7 +4650,7 @@ pub const TextDisabled = raw.igTextDisabled;
 
 /// TextUnformattedExt(text: ?[*]const u8, text_end: ?[*]const u8) void
 pub const TextUnformattedExt = raw.igTextUnformatted;
-pub fn TextUnformatted(text: ?[*]const u8) callconv(.Inline) void {
+pub inline fn TextUnformatted(text: ?[*]const u8) void {
     return TextUnformattedExt(text, null);
 }
 
@@ -4665,10 +4665,10 @@ pub const TreeNodeStrStr = raw.igTreeNodeStrStr;
 
 /// TreeNodePtr(ptr_id: ?*const c_void, fmt: ?[*:0]const u8, ...: ...) bool
 pub const TreeNodePtr = raw.igTreeNodePtr;
-pub fn TreeNodeExStrExt(label: ?[*:0]const u8, flags: TreeNodeFlags) callconv(.Inline) bool {
+pub inline fn TreeNodeExStrExt(label: ?[*:0]const u8, flags: TreeNodeFlags) bool {
     return raw.igTreeNodeExStr(label, flags.toInt());
 }
-pub fn TreeNodeExStr(label: ?[*:0]const u8) callconv(.Inline) bool {
+pub inline fn TreeNodeExStr(label: ?[*:0]const u8) bool {
     return TreeNodeExStrExt(label, .{});
 }
 
@@ -4686,31 +4686,31 @@ pub const TreePushStr = raw.igTreePushStr;
 
 /// TreePushPtrExt(ptr_id: ?*const c_void) void
 pub const TreePushPtrExt = raw.igTreePushPtr;
-pub fn TreePushPtr() callconv(.Inline) void {
+pub inline fn TreePushPtr() void {
     return TreePushPtrExt(null);
 }
 
 /// UnindentExt(indent_w: f32) void
 pub const UnindentExt = raw.igUnindent;
-pub fn Unindent() callconv(.Inline) void {
+pub inline fn Unindent() void {
     return UnindentExt(0.0);
 }
 
 /// VSliderFloatExt(label: ?[*:0]const u8, size: Vec2, v: *f32, v_min: f32, v_max: f32, format: ?[*:0]const u8, power: f32) bool
 pub const VSliderFloatExt = raw.igVSliderFloat;
-pub fn VSliderFloat(label: ?[*:0]const u8, size: Vec2, v: *f32, v_min: f32, v_max: f32) callconv(.Inline) bool {
+pub inline fn VSliderFloat(label: ?[*:0]const u8, size: Vec2, v: *f32, v_min: f32, v_max: f32) bool {
     return VSliderFloatExt(label, size, v, v_min, v_max, "%.3f", 1.0);
 }
 
 /// VSliderIntExt(label: ?[*:0]const u8, size: Vec2, v: *i32, v_min: i32, v_max: i32, format: ?[*:0]const u8) bool
 pub const VSliderIntExt = raw.igVSliderInt;
-pub fn VSliderInt(label: ?[*:0]const u8, size: Vec2, v: *i32, v_min: i32, v_max: i32) callconv(.Inline) bool {
+pub inline fn VSliderInt(label: ?[*:0]const u8, size: Vec2, v: *i32, v_min: i32, v_max: i32) bool {
     return VSliderIntExt(label, size, v, v_min, v_max, "%d");
 }
 
 /// VSliderScalarExt(label: ?[*:0]const u8, size: Vec2, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void, format: ?[*:0]const u8, power: f32) bool
 pub const VSliderScalarExt = raw.igVSliderScalar;
-pub fn VSliderScalar(label: ?[*:0]const u8, size: Vec2, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void) callconv(.Inline) bool {
+pub inline fn VSliderScalar(label: ?[*:0]const u8, size: Vec2, data_type: DataType, p_data: ?*c_void, p_min: ?*const c_void, p_max: ?*const c_void) bool {
     return VSliderScalarExt(label, size, data_type, p_data, p_min, p_max, null, 1.0);
 }
 
@@ -4725,7 +4725,7 @@ pub const ValueUint = raw.igValueUint;
 
 /// ValueFloatExt(prefix: ?[*:0]const u8, v: f32, float_format: ?[*:0]const u8) void
 pub const ValueFloatExt = raw.igValueFloat;
-pub fn ValueFloat(prefix: ?[*:0]const u8, v: f32) callconv(.Inline) void {
+pub inline fn ValueFloat(prefix: ?[*:0]const u8, v: f32) void {
     return ValueFloatExt(prefix, v, null);
 }
 
