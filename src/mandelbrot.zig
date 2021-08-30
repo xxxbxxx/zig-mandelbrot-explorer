@@ -89,7 +89,7 @@ fn MandelbrotComputer(comptime supersamples: usize, RealType: type) type {
         }
 
         fn computeOnePoint(col: u32, line: u32, width: u32, height: u32, rect: RectOriented, max_iter: u16) Fixed {
-            comptime const samples = createSamplePattern(supersamples);
+            const samples = comptime createSamplePattern(supersamples);
 
             var points: Complexs = undefined;
             {
@@ -216,7 +216,7 @@ pub fn computeLevels(buf: []Fixed, width: u32, height: u32, rect: RectOriented, 
 }
 
 pub fn drawSetAscii(rect: RectOriented) void {
-    comptime const grayscale = " .:ioVM@";
+    const grayscale = " .:ioVM@";
     const width = 120;
     const height = 40;
     var span: [width]u8 = undefined;

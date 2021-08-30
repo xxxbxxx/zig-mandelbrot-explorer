@@ -765,7 +765,7 @@ pub const WindowFlags = packed struct {
     pub usingnamespace FlagsMixin(Self);
 };
 
-pub const Col = extern enum {
+pub const Col = enum(u32) {
     Text = 0,
     TextDisabled = 1,
     WindowBg = 2,
@@ -817,7 +817,7 @@ pub const Col = extern enum {
     pub const COUNT = 48;
 };
 
-pub const DataType = extern enum {
+pub const DataType = enum(u32) {
     S8 = 0,
     U8 = 1,
     S16 = 2,
@@ -831,7 +831,7 @@ pub const DataType = extern enum {
     pub const COUNT = 10;
 };
 
-pub const Dir = extern enum {
+pub const Dir = enum(u32) {
     None = -1,
     Left = 0,
     Right = 1,
@@ -840,7 +840,7 @@ pub const Dir = extern enum {
     pub const COUNT = 4;
 };
 
-pub const Key = extern enum {
+pub const Key = enum(u32) {
     Tab = 0,
     LeftArrow = 1,
     RightArrow = 2,
@@ -866,14 +866,14 @@ pub const Key = extern enum {
     pub const COUNT = 22;
 };
 
-pub const MouseButton = extern enum {
+pub const MouseButton = enum(u32) {
     Left = 0,
     Right = 1,
     Middle = 2,
     pub const COUNT = 5;
 };
 
-pub const MouseCursor = extern enum {
+pub const MouseCursor = enum(u32) {
     None = -1,
     Arrow = 0,
     TextInput = 1,
@@ -887,7 +887,7 @@ pub const MouseCursor = extern enum {
     pub const COUNT = 9;
 };
 
-pub const NavInput = extern enum {
+pub const NavInput = enum(u32) {
     Activate = 0,
     Cancel = 1,
     Input = 2,
@@ -915,7 +915,7 @@ pub const NavInput = extern enum {
     pub const InternalStart_ = Self.KeyMenu_;
 };
 
-pub const StyleVar = extern enum {
+pub const StyleVar = enum(u32) {
     Alpha = 0,
     WindowPadding = 1,
     WindowRounding = 2,
@@ -1758,7 +1758,7 @@ pub const ListClipper = extern struct {
     /// BeginExt(self: *ListClipper, items_count: i32, items_height: f32) void
     pub const BeginExt = raw.ImGuiListClipper_Begin;
     pub inline fn Begin(self: *ListClipper, items_count: i32) void {
-        return BeginExt(self, items_count, -1.0);
+        return ListClipper.BeginExt(self, items_count, -1.0);
     }
 
     /// End(self: *ListClipper) void
