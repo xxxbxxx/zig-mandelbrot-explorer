@@ -1,7 +1,10 @@
 const std = @import("std");
-const warn = std.debug.warn;
 const fmt = std.fmt;
+const warn = std.debug.warn;
 const assert = std.debug.assert;
+const trace = @import("tracy.zig").trace;
+const traceEx = @import("tracy.zig").traceEx;
+const traceFrame = @import("tracy.zig").traceFrame;
 
 const Viewport = @import("viewport.zig");
 const Mandelbrot = @import("mandelbrot.zig");
@@ -169,6 +172,8 @@ pub fn main() !void {
 
     var quit = false;
     while (!quit) {
+        const tracy_frame = traceFrame(null);
+        defer tracy_frame.end();
 
         // screen size:
         var screen_width: u32 = undefined;
@@ -177,6 +182,9 @@ pub fn main() !void {
 
         // inputs
         {
+            const tracy_inputs = traceEx(@src(), .{ .name = "inputs" });
+            defer tracy_inputs.end();
+
             const imgui_io = Imgui.GetIO();
 
             const AffineTransfo = struct { // y = a0 + a1*x
@@ -293,6 +301,9 @@ pub fn main() !void {
         Viewport.beginFrame(viewport);
 
         if (show_dev_ui) {
+            const tracy_imgui = traceEx(@src(), .{ .name = "imgui" });
+            defer tracy_imgui.end();
+
             _ = Imgui.Begin("Parameters");
             defer Imgui.End();
 
@@ -333,6 +344,9 @@ pub fn main() !void {
         // mandelbrot computer state
         switch (mandel_compute_state.status) {
             .idle => { // start a new computation if parameters dirty
+                const tracy_compute = traceEx(@src(), .{ .name = "idle" });
+                defer tracy_compute.end();
+
                 switch (mandel_compute_state.dirty) {
                     .changed => {
                         mandel_compute_state.changed_timestamp_ms = @intCast(u64, std.time.milliTimestamp());
@@ -364,6 +378,9 @@ pub fn main() !void {
                 }
             },
             .computing => {
+                const tracy_compute = traceEx(@src(), .{ .name = "computing" });
+                defer tracy_compute.end();
+
                 if (mandel_compute_state.dirty == .changed)
                     mandel_compute_state.interrupt = true;
                 if (continuous_refresh) {
@@ -373,6 +390,9 @@ pub fn main() !void {
                 }
             },
             .done => { // finish the asynccall, present the result and get ready to make a new one.
+                const tracy_compute = traceEx(@src(), .{ .name = "compute_done" });
+                defer tracy_compute.end();
+
                 await mandel_compute_state.callframe;
                 mandel_compute_state.status = .idle;
 
@@ -387,6 +407,9 @@ pub fn main() !void {
 
         // viewport update
         {
+            const tracy_viewport = traceEx(@src(), .{ .name = "viewport" });
+            defer tracy_viewport.end();
+
             const w = @intToFloat(f32, screen_width);
             const h = @intToFloat(f32, screen_height);
 

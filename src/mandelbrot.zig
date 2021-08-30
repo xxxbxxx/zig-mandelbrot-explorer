@@ -1,6 +1,7 @@
 const std = @import("std");
 const warn = std.debug.warn;
 const assert = std.debug.assert;
+const trace = @import("tracy.zig").trace;
 const Vector = std.meta.Vector;
 
 // ============================================
@@ -151,6 +152,8 @@ fn computeOneLine(line: u32, width: u32, height: u32, buf_line: []Fixed, max_ite
     std.event.Loop.startCpuBoundOperation();
 
     // std.mem.set(Fixed, buf_line, 0);
+    const tracy = trace(@src());
+    defer tracy.end();
 
     var col: u32 = 0;
     while (col < width) : (col += 1) {
@@ -216,6 +219,9 @@ pub fn computeLevels(buf: []Fixed, width: u32, height: u32, rect: RectOriented, 
 }
 
 pub fn drawSetAscii(rect: RectOriented) void {
+    const tracy = trace(@src(), .{});
+    defer tracy.end();
+
     const grayscale = " .:ioVM@";
     const width = 120;
     const height = 40;
@@ -253,6 +259,9 @@ fn rescaleLine(dest: []Fixed, orig: []const Fixed, old_width: u32, new_width: u3
 }
 
 pub fn rescaleLevels(buf: []Fixed, old_width: u32, old_height: u32, new_width: u32, new_height: u32) void {
+    const tracy = trace(@src());
+    defer tracy.end();
+
     if (new_height >= old_height) {
         var d: u32 = new_height;
         while (d > 0) : (d -= 1) {
@@ -339,6 +348,9 @@ fn levelsToColors(level: Vector(4, u16)) Vector(4, u32) {
 }
 
 pub fn computeColors(levels: []const Fixed, pixels: []Vector(4, u32), width: u32, height: u32) void {
+    const tracy = trace(@src());
+    defer tracy.end();
+
     var j: u32 = 0;
     while (j < height) : (j += 1) {
         var i: u32 = 0;
